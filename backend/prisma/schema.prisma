@@ -1,0 +1,489 @@
+// Meeting Time Cost Manager - Prisma Schema
+// エンタープライズグレード会議コスト管理システム
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 組織・企業
+model Organization {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String    @db.VarChar(255)
+  slug                  String    @unique @db.VarChar(100)
+  domain                String?   @db.VarChar(255)
+  industry              String?   @db.VarChar(100)
+  employeeCount         Int?      @map("employee_count")
+  timezone              String    @default("Asia/Tokyo") @db.VarChar(50)
+  currency              String    @default("JPY") @db.VarChar(3)
+  fiscalYearStart       DateTime? @map("fiscal_year_start") @db.Date
+  settings              Json      @default("{}")
+  subscriptionPlan      String    @default("basic") @map("subscription_plan") @db.VarChar(50)
+  subscriptionExpiresAt DateTime? @map("subscription_expires_at") @db.Timestamptz(6)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  users            User[]
+  departments      Department[]
+  roles            Role[]
+  costTemplates    CostTemplate[]  @map("cost_templates")
+  meetings         Meeting[]
+  meetingRooms     MeetingRoom[]   @map("meeting_rooms")
+  meetingAnalytics MeetingAnalytics[]
+  organizationMetrics OrganizationMetrics[]
+  auditLogs        AuditLog[]      @map("audit_logs")
+
+  @@map("organizations")
+}
+
+// 部署
+model Department {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  parentId       String?   @map("parent_id") @db.Uuid
+  name           String    @db.VarChar(255)
+  code           String?   @db.VarChar(50)
+  description    String?
+  costCenter     String?   @map("cost_center") @db.VarChar(100)
+  budgetAnnual   Decimal?  @map("budget_annual") @db.Decimal(15, 2)
+  managerId      String?   @map("manager_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  parent           Department?       @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children         Department[]      @relation("DepartmentHierarchy")
+  manager          User?             @relation("DepartmentManager", fields: [managerId], references: [id])
+  users            User[]
+  meetingAnalytics MeetingAnalytics[]
+
+  @@unique([organizationId, code])
+  @@map("departments")
+}
+
+// 役職
+model Role {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String    @map("organization_id") @db.Uuid
+  name               String    @db.VarChar(255)
+  level              Int // 1:CEO, 2:役員, 3:部長, 4:課長, 5:主任, 6:一般
+  grade              String?   @db.VarChar(10) // S1, M1, J1 etc.
+  description        String?
+  permissions        Json      @default("{}")
+  defaultHourlyRate  Decimal?  @map("default_hourly_rate") @db.Decimal(10, 2)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+  users        User[]
+  costRates    CostRate[]
+
+  @@unique([organizationId, name])
+  @@map("roles")
+}
+
+// ユーザー
+model User {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String    @map("organization_id") @db.Uuid
+  departmentId     String?   @map("department_id") @db.Uuid
+  roleId           String?   @map("role_id") @db.Uuid
+  employeeId       String?   @map("employee_id") @db.VarChar(50)
+  email            String    @unique @db.VarChar(255)
+  passwordHash     String?   @map("password_hash") @db.VarChar(255)
+  firstName        String    @map("first_name") @db.VarChar(100)
+  lastName         String    @map("last_name") @db.VarChar(100)
+  displayName      String?   @map("display_name") @db.VarChar(200)
+  avatarUrl        String?   @map("avatar_url")
+  phone            String?   @db.VarChar(20)
+  timezone         String    @default("Asia/Tokyo") @db.VarChar(50)
+  locale           String    @default("ja") @db.VarChar(10)
+  hourlyRate       Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
+  monthlySalary    Decimal?  @map("monthly_salary") @db.Decimal(12, 2)
+  employmentType   String    @default("full_time") @map("employment_type") @db.VarChar(50)
+  hiredAt          DateTime? @map("hired_at") @db.Date
+  status           String    @default("active") @db.VarChar(20)
+  lastLoginAt      DateTime? @map("last_login_at") @db.Timestamptz(6)
+  emailVerifiedAt  DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  organization           Organization           @relation(fields: [organizationId], references: [id])
+  department             Department?            @relation(fields: [departmentId], references: [id])
+  role                   Role?                  @relation(fields: [roleId], references: [id])
+  managedDepartments     Department[]           @relation("DepartmentManager")
+  organizedMeetings      Meeting[]              @relation("MeetingOrganizer")
+  meetingParticipations  MeetingParticipant[]
+  costRates              CostRate[]
+  sessions               Session[]
+  auditLogs              AuditLog[]
+  notifications          Notification[]
+  trackerSessions        MeetingTracker[]
+
+  @@unique([organizationId, employeeId])
+  @@map("users")
+}
+
+// コストテンプレート
+model CostTemplate {
+  id                   String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId       String     @map("organization_id") @db.Uuid
+  name                 String     @db.VarChar(255)
+  description          String?
+  currency             String     @default("JPY") @db.VarChar(3)
+  overtimeMultiplier   Decimal    @default(1.25) @map("overtime_multiplier") @db.Decimal(3, 2)
+  holidayMultiplier    Decimal    @default(1.5) @map("holiday_multiplier") @db.Decimal(3, 2)
+  nightShiftMultiplier Decimal    @default(1.2) @map("night_shift_multiplier") @db.Decimal(3, 2)
+  isDefault            Boolean    @default(false) @map("is_default")
+  createdAt            DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+  costRates    CostRate[]
+
+  @@map("cost_templates")
+}
+
+// 時給レート
+model CostRate {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  costTemplateId   String       @map("cost_template_id") @db.Uuid
+  roleId           String?      @map("role_id") @db.Uuid
+  userId           String?      @map("user_id") @db.Uuid
+  baseHourlyRate   Decimal      @map("base_hourly_rate") @db.Decimal(10, 2)
+  effectiveFrom    DateTime     @map("effective_from") @db.Date
+  effectiveTo      DateTime?    @map("effective_to") @db.Date
+  rateType         String       @default("standard") @map("rate_type") @db.VarChar(20)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  costTemplate CostTemplate @relation(fields: [costTemplateId], references: [id])
+  role         Role?        @relation(fields: [roleId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@map("cost_rates")
+}
+
+// 会議
+model Meeting {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId      String    @map("organization_id") @db.Uuid
+  organizerId         String    @map("organizer_id") @db.Uuid
+  title               String    @db.VarChar(500)
+  description         String?
+  meetingType         String    @default("regular") @map("meeting_type") @db.VarChar(50)
+  category            String?   @db.VarChar(100)
+  location            String?   @db.VarChar(255)
+  roomId              String?   @map("room_id") @db.Uuid
+  isOnline            Boolean   @default(false) @map("is_online")
+  meetingUrl          String?   @map("meeting_url")
+  scheduledStartAt    DateTime  @map("scheduled_start_at") @db.Timestamptz(6)
+  scheduledEndAt      DateTime  @map("scheduled_end_at") @db.Timestamptz(6)
+  actualStartAt       DateTime? @map("actual_start_at") @db.Timestamptz(6)
+  actualEndAt         DateTime? @map("actual_end_at") @db.Timestamptz(6)
+  status              String    @default("scheduled") @db.VarChar(20)
+  agenda              String?
+  objectives          Json?
+  expectedOutcomes    String?   @map("expected_outcomes")
+  expectedRevenue     Decimal?  @map("expected_revenue") @db.Decimal(15, 2)
+  priority            String    @default("medium") @db.VarChar(20)
+  tags                String[]
+  settings            Json      @default("{}")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  organization    Organization         @relation(fields: [organizationId], references: [id])
+  organizer       User                 @relation("MeetingOrganizer", fields: [organizerId], references: [id])
+  room            MeetingRoom?         @relation(fields: [roomId], references: [id])
+  participants    MeetingParticipant[]
+  cost            MeetingCost?
+  tracker         MeetingTracker?
+  analytics       MeetingAnalytics?
+
+  @@map("meetings")
+}
+
+// 会議参加者
+model MeetingParticipant {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  meetingId            String    @map("meeting_id") @db.Uuid
+  userId               String    @map("user_id") @db.Uuid
+  role                 String    @default("participant") @db.VarChar(50)
+  invitationStatus     String    @default("pending") @map("invitation_status") @db.VarChar(20)
+  attendanceStatus     String    @default("unknown") @map("attendance_status") @db.VarChar(20)
+  joinedAt             DateTime? @map("joined_at") @db.Timestamptz(6)
+  leftAt               DateTime? @map("left_at") @db.Timestamptz(6)
+  hourlyRateOverride   Decimal?  @map("hourly_rate_override") @db.Decimal(10, 2)
+  isRequired           Boolean   @default(true) @map("is_required")
+  notes                String?
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  meeting             Meeting               @relation(fields: [meetingId], references: [id])
+  user                User                  @relation(fields: [userId], references: [id])
+  participantTrackers ParticipantTracker[]
+
+  @@unique([meetingId, userId])
+  @@map("meeting_participants")
+}
+
+// 会議コスト
+model MeetingCost {
+  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  meetingId                 String   @unique @map("meeting_id") @db.Uuid
+  totalCost                 Decimal  @default(0) @map("total_cost") @db.Decimal(15, 2)
+  directCost                Decimal  @default(0) @map("direct_cost") @db.Decimal(15, 2)
+  indirectCost              Decimal  @default(0) @map("indirect_cost") @db.Decimal(15, 2)
+  opportunityCost           Decimal  @default(0) @map("opportunity_cost") @db.Decimal(15, 2)
+  participantCount          Int      @default(0) @map("participant_count")
+  actualDurationMinutes     Int?     @map("actual_duration_minutes")
+  scheduledDurationMinutes  Int?     @map("scheduled_duration_minutes")
+  averageHourlyRate         Decimal? @map("average_hourly_rate") @db.Decimal(10, 2)
+  costPerMinute             Decimal? @map("cost_per_minute") @db.Decimal(10, 2)
+  efficiencyScore           Decimal? @map("efficiency_score") @db.Decimal(3, 2)
+  roiPercentage             Decimal? @map("roi_percentage") @db.Decimal(5, 2)
+  costBreakdown             Json?    @map("cost_breakdown")
+  calculatedAt              DateTime @default(now()) @map("calculated_at") @db.Timestamptz(6)
+  updatedAt                 DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  meeting Meeting @relation(fields: [meetingId], references: [id])
+
+  @@map("meeting_costs")
+}
+
+// 会議トラッキング
+model MeetingTracker {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  meetingId           String    @map("meeting_id") @db.Uuid
+  trackerSessionId    String    @unique @map("tracker_session_id") @db.Uuid
+  startedBy           String    @map("started_by") @db.Uuid
+  startedAt           DateTime  @map("started_at") @db.Timestamptz(6)
+  endedAt             DateTime? @map("ended_at") @db.Timestamptz(6)
+  currentCost         Decimal   @default(0) @map("current_cost") @db.Decimal(15, 2)
+  currentParticipants Int       @default(0) @map("current_participants")
+  status              String    @default("active") @db.VarChar(20)
+  realTimeData        Json      @default("{}") @map("real_time_data")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  meeting             Meeting              @relation(fields: [meetingId], references: [id])
+  startedByUser       User                 @relation(fields: [startedBy], references: [id])
+  participantTrackers ParticipantTracker[]
+
+  @@map("meeting_trackers")
+}
+
+// 参加者トラッキング
+model ParticipantTracker {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  meetingTrackerId     String    @map("meeting_tracker_id") @db.Uuid
+  participantId        String    @map("participant_id") @db.Uuid
+  joinedAt             DateTime  @map("joined_at") @db.Timestamptz(6)
+  leftAt               DateTime? @map("left_at") @db.Timestamptz(6)
+  totalDurationMinutes Int       @default(0) @map("total_duration_minutes")
+  isActive             Boolean   @default(true) @map("is_active")
+  activityData         Json      @default("{}") @map("activity_data")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  meetingTracker MeetingTracker     @relation(fields: [meetingTrackerId], references: [id])
+  participant    MeetingParticipant @relation(fields: [participantId], references: [id])
+
+  @@unique([meetingTrackerId, participantId])
+  @@map("participant_trackers")
+}
+
+// 会議分析
+model MeetingAnalytics {
+  id                        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  meetingId                 String      @unique @map("meeting_id") @db.Uuid
+  organizationId            String      @map("organization_id") @db.Uuid
+  departmentId              String?     @map("department_id") @db.Uuid
+  meetingDate               DateTime    @map("meeting_date") @db.Date
+  meetingHour               Int         @map("meeting_hour")
+  dayOfWeek                 Int         @map("day_of_week")
+  month                     Int
+  quarter                   Int
+  year                      Int
+  
+  // Cost Metrics
+  totalCost                 Decimal?    @map("total_cost") @db.Decimal(15, 2)
+  costPerParticipant        Decimal?    @map("cost_per_participant") @db.Decimal(10, 2)
+  costPerMinute             Decimal?    @map("cost_per_minute") @db.Decimal(8, 2)
+  
+  // Time Metrics
+  scheduledDuration         Int?        @map("scheduled_duration")
+  actualDuration            Int?        @map("actual_duration")
+  preparationTime           Int?        @map("preparation_time")
+  followUpTime              Int?        @map("follow_up_time")
+  
+  // Efficiency Metrics
+  startDelayMinutes         Int         @default(0) @map("start_delay_minutes")
+  efficiencyScore           Decimal?    @map("efficiency_score") @db.Decimal(3, 2)
+  productivityScore         Decimal?    @map("productivity_score") @db.Decimal(3, 2)
+  decisionCount             Int         @default(0) @map("decision_count")
+  
+  // Participation Metrics
+  invitedCount              Int?        @map("invited_count")
+  attendedCount             Int?        @map("attended_count")
+  attendanceRate            Decimal?    @map("attendance_rate") @db.Decimal(3, 2)
+  lateArrivals              Int         @default(0) @map("late_arrivals")
+  earlyDepartures           Int         @default(0) @map("early_departures")
+  
+  // Financial Metrics
+  expectedRevenue           Decimal?    @map("expected_revenue") @db.Decimal(15, 2)
+  roiPercentage             Decimal?    @map("roi_percentage") @db.Decimal(5, 2)
+  costBenefitRatio          Decimal?    @map("cost_benefit_ratio") @db.Decimal(5, 2)
+  
+  // Quality Metrics
+  satisfactionScore         Decimal?    @map("satisfaction_score") @db.Decimal(3, 2)
+  outcomeAchievementRate    Decimal?    @map("outcome_achievement_rate") @db.Decimal(3, 2)
+  
+  processedAt               DateTime    @default(now()) @map("processed_at") @db.Timestamptz(6)
+  updatedAt                 DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  meeting      Meeting      @relation(fields: [meetingId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  department   Department?  @relation(fields: [departmentId], references: [id])
+
+  @@map("meeting_analytics")
+}
+
+// 組織メトリクス
+model OrganizationMetrics {
+  id                            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId                String      @map("organization_id") @db.Uuid
+  metricDate                    DateTime    @map("metric_date") @db.Date
+  metricType                    String      @map("metric_type") @db.VarChar(50)
+  
+  // Meeting Volume
+  totalMeetings                 Int         @default(0) @map("total_meetings")
+  totalMeetingHours             Decimal     @default(0) @map("total_meeting_hours") @db.Decimal(8, 2)
+  averageMeetingDuration        Decimal?    @map("average_meeting_duration") @db.Decimal(5, 2)
+  
+  // Cost Analysis
+  totalMeetingCost              Decimal     @default(0) @map("total_meeting_cost") @db.Decimal(15, 2)
+  averageMeetingCost            Decimal?    @map("average_meeting_cost") @db.Decimal(10, 2)
+  costPerEmployee               Decimal?    @map("cost_per_employee") @db.Decimal(10, 2)
+  costTrendPercentage           Decimal?    @map("cost_trend_percentage") @db.Decimal(5, 2)
+  
+  // Efficiency Metrics
+  overallEfficiencyScore        Decimal?    @map("overall_efficiency_score") @db.Decimal(3, 2)
+  onTimeStartRate               Decimal?    @map("on_time_start_rate") @db.Decimal(3, 2)
+  meetingUtilizationRate        Decimal?    @map("meeting_utilization_rate") @db.Decimal(3, 2)
+  
+  // ROI Analysis
+  totalExpectedRevenue          Decimal?    @map("total_expected_revenue") @db.Decimal(15, 2)
+  averageRoi                    Decimal?    @map("average_roi") @db.Decimal(5, 2)
+  profitableMeetingsPercentage  Decimal?    @map("profitable_meetings_percentage") @db.Decimal(3, 2)
+  
+  // Benchmarks
+  industryComparison            Json?       @map("industry_comparison")
+  sizeComparison                Json?       @map("size_comparison")
+  
+  calculatedAt                  DateTime    @default(now()) @map("calculated_at") @db.Timestamptz(6)
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, metricDate, metricType])
+  @@map("organization_metrics")
+}
+
+// 会議室
+model MeetingRoom {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  name           String       @db.VarChar(255)
+  location       String?      @db.VarChar(255)
+  capacity       Int?
+  hourlyCost     Decimal?     @map("hourly_cost") @db.Decimal(8, 2)
+  equipment      Json?
+  isBookable     Boolean      @default(true) @map("is_bookable")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+  meetings     Meeting[]
+
+  @@map("meeting_rooms")
+}
+
+// セッション管理
+model Session {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  sessionToken    String    @unique @map("session_token") @db.VarChar(255)
+  refreshToken    String?   @unique @map("refresh_token") @db.VarChar(255)
+  deviceInfo      Json?     @map("device_info")
+  ipAddress       String?   @map("ip_address") @db.Inet
+  userAgent       String?   @map("user_agent")
+  expiresAt       DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastAccessedAt  DateTime  @default(now()) @map("last_accessed_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("sessions")
+}
+
+// 監査ログ
+model AuditLog {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String?   @map("user_id") @db.Uuid
+  action         String    @db.VarChar(100)
+  resourceType   String    @map("resource_type") @db.VarChar(50)
+  resourceId     String?   @map("resource_id") @db.Uuid
+  oldValues      Json?     @map("old_values")
+  newValues      Json?     @map("new_values")
+  metadata       Json?
+  ipAddress      String?   @map("ip_address") @db.Inet
+  userAgent      String?   @map("user_agent")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// 通知
+model Notification {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  type      String    @db.VarChar(50)
+  title     String    @db.VarChar(255)
+  message   String?
+  data      Json?
+  readAt    DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}

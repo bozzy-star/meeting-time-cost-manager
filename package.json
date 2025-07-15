@@ -1,0 +1,64 @@
+{
+  "name": "meeting-time-cost-manager",
+  "version": "1.0.0",
+  "description": "Enterprise meeting time cost management system",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "analytics",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:analytics": "npm run dev --workspace=analytics",
+    "build": "npm run build --workspaces",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "test": "npm test --workspaces",
+    "test:frontend": "npm test --workspace=frontend",
+    "test:backend": "npm test --workspace=backend",
+    "lint": "npm run lint --workspaces",
+    "lint:fix": "npm run lint:fix --workspaces",
+    "type-check": "npm run type-check --workspaces",
+    "setup": "npm install && npm run setup --workspaces",
+    "clean": "npm run clean --workspaces && rm -rf node_modules",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "deploy:staging": "bash infrastructure/scripts/deploy.sh staging",
+    "deploy:production": "bash infrastructure/scripts/deploy.sh production"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.3.0",
+    "@commitlint/config-conventional": "^17.3.0",
+    "concurrently": "^7.6.0",
+    "husky": "^8.0.2",
+    "lerna": "^6.1.0",
+    "lint-staged": "^13.0.3",
+    "prettier": "^2.7.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bozzy-star/meeting-time-cost-manager.git"
+  },
+  "author": "Claude Code",
+  "license": "MIT",
+  "keywords": [
+    "meeting",
+    "cost",
+    "management",
+    "productivity",
+    "enterprise",
+    "pwa",
+    "typescript",
+    "react",
+    "nodejs"
+  ]
+}

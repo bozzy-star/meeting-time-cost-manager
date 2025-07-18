@@ -1,56 +1,40 @@
 import { PrismaClient } from '@prisma/client';
-import { hash } from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seeding...');
+  console.log('🌱 Starting database seed...');
 
-  // 1. Create sample organization
+  // Create organization
   const organization = await prisma.organization.create({
     data: {
-      name: 'サンプル株式会社',
-      slug: 'sample-corp',
-      domain: 'sample-corp.com',
-      industry: 'IT・ソフトウェア',
-      employeeCount: 250,
+      name: 'Demo Corporation',
+      slug: 'demo-corp',
+      domain: 'demo.com',
+      industry: 'Technology',
+      employeeCount: 150,
       timezone: 'Asia/Tokyo',
       currency: 'JPY',
-      fiscalYearStart: new Date('2024-04-01'),
-      settings: {
-        workingHours: { start: '09:00', end: '18:00' },
-        workingDays: [1, 2, 3, 4, 5], // Monday to Friday
-        overtime: {
-          enabled: true,
-          multiplier: 1.25
-        }
-      },
-      subscriptionPlan: 'enterprise'
+      subscriptionPlan: 'premium',
+      settings: JSON.stringify({
+        allowExternalMeetings: true,
+        requireMeetingApproval: false,
+        defaultMeetingDuration: 60
+      })
     }
   });
 
-  console.log('✅ Created organization:', organization.name);
-
-  // 2. Create departments
+  // Create departments
   const departments = await Promise.all([
     prisma.department.create({
       data: {
         organizationId: organization.id,
-        name: '経営企画部',
-        code: 'STRATEGY',
-        description: '経営戦略・企画を担当',
-        costCenter: 'CC-001',
-        budgetAnnual: 500000000 // 5億円
-      }
-    }),
-    prisma.department.create({
-      data: {
-        organizationId: organization.id,
-        name: '開発部',
-        code: 'DEV',
-        description: 'ソフトウェア開発を担当',
-        costCenter: 'CC-002',
-        budgetAnnual: 800000000 // 8億円
+        name: '技術部',
+        code: 'TECH',
+        description: 'システム開発・運用',
+        costCenter: 'CC001',
+        budgetAnnual: 50000000
       }
     }),
     prisma.department.create({
@@ -58,9 +42,9 @@ async function main() {
         organizationId: organization.id,
         name: '営業部',
         code: 'SALES',
-        description: '営業活動を担当',
-        costCenter: 'CC-003',
-        budgetAnnual: 300000000 // 3億円
+        description: '営業・顧客対応',
+        costCenter: 'CC002',
+        budgetAnnual: 30000000
       }
     }),
     prisma.department.create({
@@ -68,46 +52,28 @@ async function main() {
         organizationId: organization.id,
         name: '人事部',
         code: 'HR',
-        description: '人事・総務を担当',
-        costCenter: 'CC-004',
-        budgetAnnual: 200000000 // 2億円
+        description: '人事・総務',
+        costCenter: 'CC003',
+        budgetAnnual: 15000000
       }
     })
   ]);
 
-  console.log('✅ Created departments:', departments.length);
-
-  // 3. Create roles with hierarchy
+  // Create roles
   const roles = await Promise.all([
     prisma.role.create({
       data: {
         organizationId: organization.id,
-        name: '代表取締役CEO',
+        name: 'CEO',
         level: 1,
         grade: 'E1',
         description: '最高経営責任者',
-        defaultHourlyRate: 50000,
-        permissions: {
+        defaultHourlyRate: 15000,
+        permissions: JSON.stringify({
           admin: true,
-          analytics: { read: true, write: true },
-          meetings: { read: true, write: true, delete: true },
-          users: { read: true, write: true, delete: true }
-        }
-      }
-    }),
-    prisma.role.create({
-      data: {
-        organizationId: organization.id,
-        name: '取締役',
-        level: 2,
-        grade: 'E2',
-        description: '取締役',
-        defaultHourlyRate: 30000,
-        permissions: {
-          analytics: { read: true, write: true },
-          meetings: { read: true, write: true },
-          users: { read: true, write: false }
-        }
+          manage_all: true,
+          view_all: true
+        })
       }
     }),
     prisma.role.create({
@@ -115,14 +81,14 @@ async function main() {
         organizationId: organization.id,
         name: '部長',
         level: 3,
-        grade: 'M1',
+        grade: 'M3',
         description: '部門責任者',
-        defaultHourlyRate: 12000,
-        permissions: {
-          analytics: { read: true, write: false },
-          meetings: { read: true, write: true },
-          users: { read: true, write: false }
-        }
+        defaultHourlyRate: 8000,
+        permissions: JSON.stringify({
+          manage_department: true,
+          view_department: true,
+          create_meetings: true
+        })
       }
     }),
     prisma.role.create({
@@ -130,51 +96,221 @@ async function main() {
         organizationId: organization.id,
         name: '課長',
         level: 4,
-        grade: 'M2',
+        grade: 'M4',
         description: '課責任者',
-        defaultHourlyRate: 8000,
-        permissions: {
-          analytics: { read: true, write: false },
-          meetings: { read: true, write: true }
-        }
-      }
-    }),
-    prisma.role.create({
-      data: {
-        organizationId: organization.id,
-        name: '主任',
-        level: 5,
-        grade: 'S1',
-        description: 'チームリーダー',
         defaultHourlyRate: 6000,
-        permissions: {
-          meetings: { read: true, write: true }
-        }
+        permissions: JSON.stringify({
+          manage_team: true,
+          view_team: true,
+          create_meetings: true
+        })
       }
     }),
     prisma.role.create({
       data: {
         organizationId: organization.id,
-        name: '一般社員',
+        name: 'シニアエンジニア',
+        level: 5,
+        grade: 'S5',
+        description: '上級技術者',
+        defaultHourlyRate: 5000,
+        permissions: JSON.stringify({
+          view_own: true,
+          create_meetings: true
+        })
+      }
+    }),
+    prisma.role.create({
+      data: {
+        organizationId: organization.id,
+        name: 'エンジニア',
         level: 6,
-        grade: 'J1',
-        description: '一般従業員',
+        grade: 'G6',
+        description: '一般技術者',
         defaultHourlyRate: 4000,
-        permissions: {
-          meetings: { read: true, write: false }
-        }
+        permissions: JSON.stringify({
+          view_own: true,
+          create_meetings: false
+        })
       }
     })
   ]);
 
-  console.log('✅ Created roles:', roles.length);
+  // Hash password for users
+  const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // 4. Create cost template
+  // Create users
+  const users = await Promise.all([
+    prisma.user.create({
+      data: {
+        organizationId: organization.id,
+        departmentId: departments[0].id,
+        roleId: roles[0].id,
+        employeeId: 'EMP001',
+        email: 'ceo@demo.com',
+        passwordHash: hashedPassword,
+        firstName: '太郎',
+        lastName: '山田',
+        displayName: '山田太郎',
+        phone: '090-1234-5678',
+        hourlyRate: 15000,
+        monthlySalary: 1500000,
+        employmentType: 'full_time',
+        hiredAt: new Date('2020-01-01'),
+        status: 'active',
+        emailVerifiedAt: new Date()
+      }
+    }),
+    prisma.user.create({
+      data: {
+        organizationId: organization.id,
+        departmentId: departments[0].id,
+        roleId: roles[1].id,
+        employeeId: 'EMP002',
+        email: 'tech-manager@demo.com',
+        passwordHash: hashedPassword,
+        firstName: '花子',
+        lastName: '佐藤',
+        displayName: '佐藤花子',
+        phone: '090-2345-6789',
+        hourlyRate: 8000,
+        monthlySalary: 800000,
+        employmentType: 'full_time',
+        hiredAt: new Date('2020-04-01'),
+        status: 'active',
+        emailVerifiedAt: new Date()
+      }
+    }),
+    prisma.user.create({
+      data: {
+        organizationId: organization.id,
+        departmentId: departments[0].id,
+        roleId: roles[3].id,
+        employeeId: 'EMP003',
+        email: 'senior-dev@demo.com',
+        passwordHash: hashedPassword,
+        firstName: '次郎',
+        lastName: '田中',
+        displayName: '田中次郎',
+        phone: '090-3456-7890',
+        hourlyRate: 5000,
+        monthlySalary: 600000,
+        employmentType: 'full_time',
+        hiredAt: new Date('2021-01-01'),
+        status: 'active',
+        emailVerifiedAt: new Date()
+      }
+    }),
+    prisma.user.create({
+      data: {
+        organizationId: organization.id,
+        departmentId: departments[1].id,
+        roleId: roles[1].id,
+        employeeId: 'EMP004',
+        email: 'sales-manager@demo.com',
+        passwordHash: hashedPassword,
+        firstName: '三郎',
+        lastName: '鈴木',
+        displayName: '鈴木三郎',
+        phone: '090-4567-8901',
+        hourlyRate: 7000,
+        monthlySalary: 750000,
+        employmentType: 'full_time',
+        hiredAt: new Date('2020-06-01'),
+        status: 'active',
+        emailVerifiedAt: new Date()
+      }
+    }),
+    prisma.user.create({
+      data: {
+        organizationId: organization.id,
+        departmentId: departments[2].id,
+        roleId: roles[2].id,
+        employeeId: 'EMP005',
+        email: 'hr-manager@demo.com',
+        passwordHash: hashedPassword,
+        firstName: '美香',
+        lastName: '高橋',
+        displayName: '高橋美香',
+        phone: '090-5678-9012',
+        hourlyRate: 6000,
+        monthlySalary: 650000,
+        employmentType: 'full_time',
+        hiredAt: new Date('2020-08-01'),
+        status: 'active',
+        emailVerifiedAt: new Date()
+      }
+    })
+  ]);
+
+  // Update department managers
+  await Promise.all([
+    prisma.department.update({
+      where: { id: departments[0].id },
+      data: { managerId: users[1].id }
+    }),
+    prisma.department.update({
+      where: { id: departments[1].id },
+      data: { managerId: users[3].id }
+    }),
+    prisma.department.update({
+      where: { id: departments[2].id },
+      data: { managerId: users[4].id }
+    })
+  ]);
+
+  // Create meeting rooms
+  const meetingRooms = await Promise.all([
+    prisma.meetingRoom.create({
+      data: {
+        organizationId: organization.id,
+        name: '大会議室A',
+        location: '3階',
+        capacity: 20,
+        hourlyCost: 2000,
+        equipment: JSON.stringify([
+          'プロジェクター',
+          'ホワイトボード',
+          'テレビ会議システム',
+          'Wi-Fi'
+        ])
+      }
+    }),
+    prisma.meetingRoom.create({
+      data: {
+        organizationId: organization.id,
+        name: '中会議室B',
+        location: '2階',
+        capacity: 10,
+        hourlyCost: 1000,
+        equipment: JSON.stringify([
+          'モニター',
+          'ホワイトボード',
+          'Wi-Fi'
+        ])
+      }
+    }),
+    prisma.meetingRoom.create({
+      data: {
+        organizationId: organization.id,
+        name: '小会議室C',
+        location: '2階',
+        capacity: 6,
+        hourlyCost: 500,
+        equipment: JSON.stringify([
+          'モニター',
+          'Wi-Fi'
+        ])
+      }
+    })
+  ]);
+
+  // Create cost template
   const costTemplate = await prisma.costTemplate.create({
     data: {
       organizationId: organization.id,
-      name: '標準コストテンプレート',
-      description: '基本的な時給計算テンプレート',
+      name: 'デフォルトコスト設定',
+      description: '標準的な会議コスト計算テンプレート',
       currency: 'JPY',
       overtimeMultiplier: 1.25,
       holidayMultiplier: 1.5,
@@ -183,14 +319,14 @@ async function main() {
     }
   });
 
-  // 5. Create cost rates for each role
+  // Create cost rates for roles
   const costRates = await Promise.all(
     roles.map(role => 
       prisma.costRate.create({
         data: {
           costTemplateId: costTemplate.id,
           roleId: role.id,
-          baseHourlyRate: role.defaultHourlyRate!,
+          baseHourlyRate: role.defaultHourlyRate || 4000,
           effectiveFrom: new Date('2024-01-01'),
           rateType: 'standard'
         }
@@ -198,450 +334,271 @@ async function main() {
     )
   );
 
-  console.log('✅ Created cost rates:', costRates.length);
-
-  // 6. Create sample users
-  const passwordHash = await hash('Password123!', 12);
-
-  const users = await Promise.all([
-    // CEO
-    prisma.user.create({
-      data: {
-        organizationId: organization.id,
-        departmentId: departments[0].id, // 経営企画部
-        roleId: roles[0].id, // CEO
-        employeeId: 'EMP001',
-        email: 'ceo@sample-corp.com',
-        passwordHash,
-        firstName: '太郎',
-        lastName: '田中',
-        displayName: '田中 太郎',
-        phone: '090-1234-5678',
-        hourlyRate: 50000,
-        monthlySalary: 2000000,
-        employmentType: 'full_time',
-        hiredAt: new Date('2020-01-01'),
-        status: 'active',
-        emailVerifiedAt: new Date()
-      }
-    }),
-    // 取締役
-    prisma.user.create({
-      data: {
-        organizationId: organization.id,
-        departmentId: departments[1].id, // 開発部
-        roleId: roles[1].id, // 取締役
-        employeeId: 'EMP002',
-        email: 'cto@sample-corp.com',
-        passwordHash,
-        firstName: '花子',
-        lastName: '鈴木',
-        displayName: '鈴木 花子',
-        phone: '090-2345-6789',
-        hourlyRate: 30000,
-        monthlySalary: 1500000,
-        employmentType: 'full_time',
-        hiredAt: new Date('2020-03-01'),
-        status: 'active',
-        emailVerifiedAt: new Date()
-      }
-    }),
-    // 部長
-    prisma.user.create({
-      data: {
-        organizationId: organization.id,
-        departmentId: departments[1].id, // 開発部
-        roleId: roles[2].id, // 部長
-        employeeId: 'EMP003',
-        email: 'dev-manager@sample-corp.com',
-        passwordHash,
-        firstName: '次郎',
-        lastName: '佐藤',
-        displayName: '佐藤 次郎',
-        phone: '090-3456-7890',
-        hourlyRate: 12000,
-        monthlySalary: 800000,
-        employmentType: 'full_time',
-        hiredAt: new Date('2021-01-01'),
-        status: 'active',
-        emailVerifiedAt: new Date()
-      }
-    }),
-    // 課長
-    prisma.user.create({
-      data: {
-        organizationId: organization.id,
-        departmentId: departments[2].id, // 営業部
-        roleId: roles[3].id, // 課長
-        employeeId: 'EMP004',
-        email: 'sales-manager@sample-corp.com',
-        passwordHash,
-        firstName: '美香',
-        lastName: '高橋',
-        displayName: '高橋 美香',
-        phone: '090-4567-8901',
-        hourlyRate: 8000,
-        monthlySalary: 600000,
-        employmentType: 'full_time',
-        hiredAt: new Date('2021-06-01'),
-        status: 'active',
-        emailVerifiedAt: new Date()
-      }
-    }),
-    // 一般社員（複数）
-    ...Array.from({ length: 6 }, (_, i) => 
-      prisma.user.create({
-        data: {
-          organizationId: organization.id,
-          departmentId: departments[i % 4].id,
-          roleId: roles[5].id, // 一般社員
-          employeeId: `EMP${String(i + 10).padStart(3, '0')}`,
-          email: `employee${i + 1}@sample-corp.com`,
-          passwordHash,
-          firstName: ['三郎', '四郎', '五郎', '六郎', '七郎', '八郎'][i],
-          lastName: ['田中', '鈴木', '佐藤', '高橋', '伊藤', '渡辺'][i],
-          displayName: `${['田中', '鈴木', '佐藤', '高橋', '伊藤', '渡辺'][i]} ${['三郎', '四郎', '五郎', '六郎', '七郎', '八郎'][i]}`,
-          phone: `090-${5000 + i}${String(i).repeat(3)}`,
-          hourlyRate: 4000,
-          monthlySalary: 350000,
-          employmentType: 'full_time',
-          hiredAt: new Date(`2022-${String((i % 12) + 1).padStart(2, '0')}-01`),
-          status: 'active',
-          emailVerifiedAt: new Date()
-        }
-      })
-    )
-  ]);
-
-  console.log('✅ Created users:', users.length);
-
-  // 7. Update department managers
-  await Promise.all([
-    prisma.department.update({
-      where: { id: departments[0].id },
-      data: { managerId: users[0].id } // CEO
-    }),
-    prisma.department.update({
-      where: { id: departments[1].id },
-      data: { managerId: users[2].id } // 開発部長
-    }),
-    prisma.department.update({
-      where: { id: departments[2].id },
-      data: { managerId: users[3].id } // 営業課長
-    }),
-    prisma.department.update({
-      where: { id: departments[3].id },
-      data: { managerId: users[1].id } // 取締役が人事部も兼任
-    })
-  ]);
-
-  // 8. Create meeting rooms
-  const meetingRooms = await Promise.all([
-    prisma.meetingRoom.create({
-      data: {
-        organizationId: organization.id,
-        name: '大会議室A',
-        location: '本社10F',
-        capacity: 20,
-        hourlyCost: 5000,
-        equipment: {
-          projector: true,
-          whiteboard: true,
-          videoConference: true,
-          wifi: true
-        }
-      }
-    }),
-    prisma.meetingRoom.create({
-      data: {
-        organizationId: organization.id,
-        name: '中会議室B',
-        location: '本社10F',
-        capacity: 10,
-        hourlyCost: 3000,
-        equipment: {
-          projector: true,
-          whiteboard: true,
-          videoConference: false,
-          wifi: true
-        }
-      }
-    }),
-    prisma.meetingRoom.create({
-      data: {
-        organizationId: organization.id,
-        name: '小会議室C',
-        location: '本社9F',
-        capacity: 6,
-        hourlyCost: 2000,
-        equipment: {
-          projector: false,
-          whiteboard: true,
-          videoConference: false,
-          wifi: true
-        }
-      }
-    })
-  ]);
-
-  console.log('✅ Created meeting rooms:', meetingRooms.length);
-
-  // 9. Create sample meetings
-  const now = new Date();
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
+  // Create sample meetings
   const meetings = await Promise.all([
-    // 昨日の完了した会議
     prisma.meeting.create({
       data: {
         organizationId: organization.id,
-        organizerId: users[0].id, // CEO
-        title: '四半期業績レビュー会議',
-        description: 'Q4の業績レビューと来期戦略の検討',
-        meetingType: 'board',
-        category: '経営会議',
+        organizerId: users[1].id,
+        title: '週次技術レビュー',
+        description: '技術チームの週次進捗確認とレビュー',
+        meetingType: 'recurring',
+        category: 'development',
         location: '大会議室A',
         roomId: meetingRooms[0].id,
-        isOnline: false,
-        scheduledStartAt: new Date(yesterday.getTime() + 9 * 60 * 60 * 1000), // 9:00
-        scheduledEndAt: new Date(yesterday.getTime() + 11 * 60 * 60 * 1000), // 11:00
-        actualStartAt: new Date(yesterday.getTime() + 9 * 60 * 60 * 1000 + 5 * 60 * 1000), // 9:05 (5分遅れ)
-        actualEndAt: new Date(yesterday.getTime() + 11 * 60 * 60 * 1000 + 15 * 60 * 1000), // 11:15 (15分延長)
+        scheduledStartAt: new Date('2024-07-15T10:00:00Z'),
+        scheduledEndAt: new Date('2024-07-15T11:00:00Z'),
+        actualStartAt: new Date('2024-07-15T10:05:00Z'),
+        actualEndAt: new Date('2024-07-15T11:10:00Z'),
         status: 'completed',
-        agenda: '1. Q4実績報告\n2. 来期予算計画\n3. 新規事業検討',
-        objectives: {
-          primary: '来期戦略の決定',
-          secondary: '予算承認'
-        },
-        expectedOutcomes: '来期予算と戦略の確定',
-        expectedRevenue: 500000000, // 5億円
+        agenda: JSON.stringify([
+          'プロジェクト進捗報告',
+          '技術課題の共有',
+          '来週のタスク確認'
+        ]),
+        objectives: JSON.stringify([
+          'チーム全体の進捗共有',
+          '技術的な問題の早期発見',
+          'リソース調整の検討'
+        ]),
+        expectedOutcomes: '技術チームの生産性向上',
         priority: 'high',
-        tags: ['戦略', '予算', '業績']
+        tags: '技術,レビュー,週次'
       }
     }),
-    // 今日の進行中会議
     prisma.meeting.create({
       data: {
         organizationId: organization.id,
-        organizerId: users[2].id, // 開発部長
-        title: '週次開発進捗会議',
-        description: '開発プロジェクトの進捗確認',
-        meetingType: 'regular',
-        category: '開発会議',
-        isOnline: true,
-        meetingUrl: 'https://zoom.us/j/123456789',
-        scheduledStartAt: new Date(now.getTime() - 30 * 60 * 1000), // 30分前開始
-        scheduledEndAt: new Date(now.getTime() + 30 * 60 * 1000), // 30分後終了予定
-        actualStartAt: new Date(now.getTime() - 30 * 60 * 1000),
-        status: 'in_progress',
-        agenda: '1. スプリント進捗報告\n2. ブロッカー確認\n3. 来週のタスク計画',
-        objectives: {
-          primary: '進捗の共有と課題解決'
-        },
-        expectedRevenue: 10000000, // 1000万円
-        priority: 'medium',
-        tags: ['開発', '進捗', 'スプリント']
-      }
-    }),
-    // 明日の予定会議
-    prisma.meeting.create({
-      data: {
-        organizationId: organization.id,
-        organizerId: users[3].id, // 営業課長
+        organizerId: users[3].id,
         title: '月次営業会議',
-        description: '月次売上報告と来月の目標設定',
-        meetingType: 'regular',
-        category: '営業会議',
+        description: '月次売上実績と来月の営業戦略検討',
+        meetingType: 'recurring',
+        category: 'sales',
         location: '中会議室B',
         roomId: meetingRooms[1].id,
-        isOnline: false,
-        scheduledStartAt: new Date(tomorrow.getTime() + 14 * 60 * 60 * 1000), // 14:00
-        scheduledEndAt: new Date(tomorrow.getTime() + 16 * 60 * 60 * 1000), // 16:00
+        scheduledStartAt: new Date('2024-07-15T14:00:00Z'),
+        scheduledEndAt: new Date('2024-07-15T15:30:00Z'),
         status: 'scheduled',
-        agenda: '1. 月次実績報告\n2. 顧客分析\n3. 来月目標設定',
-        objectives: {
-          primary: '来月の営業目標設定',
-          secondary: '顧客戦略の検討'
-        },
-        expectedRevenue: 100000000, // 1億円
+        agenda: JSON.stringify([
+          '月次売上実績報告',
+          '顧客案件の進捗確認',
+          '来月の営業戦略検討'
+        ]),
+        objectives: JSON.stringify([
+          '売上目標達成状況の確認',
+          '営業戦略の調整',
+          'チームモチベーションの向上'
+        ]),
+        expectedRevenue: 5000000,
         priority: 'high',
-        tags: ['営業', '実績', '目標']
+        tags: '営業,月次,戦略'
+      }
+    }),
+    prisma.meeting.create({
+      data: {
+        organizationId: organization.id,
+        organizerId: users[0].id,
+        title: '四半期経営会議',
+        description: '四半期業績レビューと次期戦略決定',
+        meetingType: 'strategic',
+        category: 'executive',
+        location: '大会議室A',
+        roomId: meetingRooms[0].id,
+        scheduledStartAt: new Date('2024-07-16T09:00:00Z'),
+        scheduledEndAt: new Date('2024-07-16T12:00:00Z'),
+        status: 'scheduled',
+        agenda: JSON.stringify([
+          '四半期業績レビュー',
+          '各部門の成果報告',
+          '次期戦略の検討',
+          '予算配分の決定'
+        ]),
+        objectives: JSON.stringify([
+          '四半期目標達成状況の確認',
+          '戦略的意思決定',
+          '来期計画の策定'
+        ]),
+        expectedRevenue: 50000000,
+        priority: 'critical',
+        tags: '経営,四半期,戦略'
       }
     })
   ]);
 
-  console.log('✅ Created meetings:', meetings.length);
-
-  // 10. Add meeting participants
-  const meetingParticipants = [];
-  
-  // 四半期業績レビュー会議の参加者（役員会議）
-  for (let i = 0; i < 4; i++) {
-    const participant = await prisma.meetingParticipant.create({
+  // Create meeting participants
+  const participants = await Promise.all([
+    // 週次技術レビューの参加者
+    prisma.meetingParticipant.create({
       data: {
         meetingId: meetings[0].id,
-        userId: users[i].id,
-        role: i === 0 ? 'organizer' : 'participant',
+        userId: users[1].id,
+        role: 'organizer',
         invitationStatus: 'accepted',
-        attendanceStatus: 'present',
-        joinedAt: meetings[0].actualStartAt,
-        leftAt: meetings[0].actualEndAt,
+        attendanceStatus: 'attended',
+        joinedAt: new Date('2024-07-15T10:05:00Z'),
+        leftAt: new Date('2024-07-15T11:10:00Z'),
         isRequired: true
       }
-    });
-    meetingParticipants.push(participant);
-  }
-
-  // 週次開発進捗会議の参加者
-  for (let i = 2; i < 8; i++) {
-    const participant = await prisma.meetingParticipant.create({
+    }),
+    prisma.meetingParticipant.create({
+      data: {
+        meetingId: meetings[0].id,
+        userId: users[2].id,
+        role: 'participant',
+        invitationStatus: 'accepted',
+        attendanceStatus: 'attended',
+        joinedAt: new Date('2024-07-15T10:05:00Z'),
+        leftAt: new Date('2024-07-15T11:10:00Z'),
+        isRequired: true
+      }
+    }),
+    // 月次営業会議の参加者
+    prisma.meetingParticipant.create({
       data: {
         meetingId: meetings[1].id,
-        userId: users[i].id,
-        role: i === 2 ? 'organizer' : 'participant',
+        userId: users[3].id,
+        role: 'organizer',
         invitationStatus: 'accepted',
-        attendanceStatus: i < 6 ? 'present' : 'absent',
-        joinedAt: i < 6 ? meetings[1].actualStartAt : null,
+        attendanceStatus: 'pending',
         isRequired: true
       }
-    });
-    meetingParticipants.push(participant);
-  }
-
-  // 月次営業会議の参加者
-  for (let i = 3; i < 7; i++) {
-    const participant = await prisma.meetingParticipant.create({
+    }),
+    prisma.meetingParticipant.create({
+      data: {
+        meetingId: meetings[1].id,
+        userId: users[0].id,
+        role: 'participant',
+        invitationStatus: 'accepted',
+        attendanceStatus: 'pending',
+        isRequired: false
+      }
+    }),
+    // 四半期経営会議の参加者
+    prisma.meetingParticipant.create({
       data: {
         meetingId: meetings[2].id,
-        userId: users[i].id,
-        role: i === 3 ? 'organizer' : 'participant',
-        invitationStatus: i < 6 ? 'accepted' : 'pending',
-        attendanceStatus: 'unknown',
+        userId: users[0].id,
+        role: 'organizer',
+        invitationStatus: 'accepted',
+        attendanceStatus: 'pending',
         isRequired: true
       }
-    });
-    meetingParticipants.push(participant);
-  }
+    }),
+    prisma.meetingParticipant.create({
+      data: {
+        meetingId: meetings[2].id,
+        userId: users[1].id,
+        role: 'participant',
+        invitationStatus: 'accepted',
+        attendanceStatus: 'pending',
+        isRequired: true
+      }
+    }),
+    prisma.meetingParticipant.create({
+      data: {
+        meetingId: meetings[2].id,
+        userId: users[3].id,
+        role: 'participant',
+        invitationStatus: 'accepted',
+        attendanceStatus: 'pending',
+        isRequired: true
+      }
+    }),
+    prisma.meetingParticipant.create({
+      data: {
+        meetingId: meetings[2].id,
+        userId: users[4].id,
+        role: 'participant',
+        invitationStatus: 'accepted',
+        attendanceStatus: 'pending',
+        isRequired: true
+      }
+    })
+  ]);
 
-  console.log('✅ Created meeting participants:', meetingParticipants.length);
-
-  // 11. Create meeting costs for completed meetings
+  // Create meeting cost for completed meeting
   const meetingCost = await prisma.meetingCost.create({
     data: {
-      meetingId: meetings[0].id, // 四半期業績レビュー会議
-      totalCost: 425000, // 4人 × 平均35000円/時 × 2.25時間
-      directCost: 315000, // 人件費
-      indirectCost: 60000, // 会議室代、準備時間等
-      opportunityCost: 50000, // 機会損失
-      participantCount: 4,
-      actualDurationMinutes: 135, // 2時間15分
-      scheduledDurationMinutes: 120, // 2時間
-      averageHourlyRate: 35000,
-      costPerMinute: 3148,
+      meetingId: meetings[0].id,
+      totalCost: 26000,
+      directCost: 14040,
+      indirectCost: 2000,
+      opportunityCost: 0,
+      participantCount: 2,
+      actualDurationMinutes: 65,
+      scheduledDurationMinutes: 60,
+      averageHourlyRate: 6500,
+      costPerMinute: 400,
       efficiencyScore: 0.85,
-      roiPercentage: 11664.71, // (500M - 425K) / 425K * 100
-      costBreakdown: {
-        ceo: { hourlyRate: 50000, duration: 135, cost: 112500 },
-        cto: { hourlyRate: 30000, duration: 135, cost: 67500 },
-        manager1: { hourlyRate: 12000, duration: 135, cost: 27000 },
-        manager2: { hourlyRate: 8000, duration: 135, cost: 18000 },
-        roomCost: 11250,
-        facilitationCost: 5000
-      }
+      roiPercentage: 15.5,
+      costBreakdown: JSON.stringify({
+        personnel: 14040,
+        room: 2000,
+        equipment: 0,
+        other: 0
+      })
     }
   });
 
-  // 12. Create meeting analytics
+  // Create meeting analytics for completed meeting
   const meetingAnalytics = await prisma.meetingAnalytics.create({
     data: {
       meetingId: meetings[0].id,
       organizationId: organization.id,
       departmentId: departments[0].id,
-      meetingDate: yesterday,
-      meetingHour: 9,
-      dayOfWeek: yesterday.getDay() || 7, // Sunday = 7
-      month: yesterday.getMonth() + 1,
-      quarter: Math.ceil((yesterday.getMonth() + 1) / 3),
-      year: yesterday.getFullYear(),
-      totalCost: 425000,
-      costPerParticipant: 106250,
-      costPerMinute: 3148,
-      scheduledDuration: 120,
-      actualDuration: 135,
-      preparationTime: 30,
-      followUpTime: 15,
+      meetingDate: new Date('2024-07-15'),
+      meetingHour: 10,
+      dayOfWeek: 1,
+      month: 7,
+      quarter: 3,
+      year: 2024,
+      totalCost: 26000,
+      costPerParticipant: 13000,
+      costPerMinute: 400,
+      scheduledDuration: 60,
+      actualDuration: 65,
+      preparationTime: 15,
+      followUpTime: 30,
       startDelayMinutes: 5,
       efficiencyScore: 0.85,
       productivityScore: 0.90,
       decisionCount: 3,
-      invitedCount: 4,
-      attendedCount: 4,
+      invitedCount: 2,
+      attendedCount: 2,
       attendanceRate: 1.0,
       lateArrivals: 0,
       earlyDepartures: 0,
-      expectedRevenue: 500000000,
-      roiPercentage: 11664.71,
-      costBenefitRatio: 0.000085,
-      satisfactionScore: 0.85,
-      outcomeAchievementRate: 0.90
+      roiPercentage: 15.5,
+      costBenefitRatio: 1.15,
+      satisfactionScore: 4.2,
+      outcomeAchievementRate: 0.85
     }
   });
 
-  // 13. Create organization metrics
-  const orgMetrics = await prisma.organizationMetrics.create({
-    data: {
-      organizationId: organization.id,
-      metricDate: yesterday,
-      metricType: 'daily',
-      totalMeetings: 1,
-      totalMeetingHours: 2.25,
-      averageMeetingDuration: 135,
-      totalMeetingCost: 425000,
-      averageMeetingCost: 425000,
-      costPerEmployee: 1700, // 425000 / 250 employees
-      costTrendPercentage: 5.2,
-      overallEfficiencyScore: 0.85,
-      onTimeStartRate: 0.0, // 遅れて開始
-      meetingUtilizationRate: 1.125, // 実際時間 / 予定時間
-      totalExpectedRevenue: 500000000,
-      averageRoi: 11664.71,
-      profitableMeetingsPercentage: 1.0,
-      industryComparison: {
-        efficiency: { industry: 0.75, company: 0.85 },
-        cost: { industry: 500000, company: 425000 }
-      },
-      sizeComparison: {
-        similar_size_avg_cost: 450000,
-        similar_size_avg_efficiency: 0.80
-      }
-    }
-  });
-
-  console.log('✅ Created analytics data');
-
-  console.log('🌱 Database seeding completed successfully!');
-  console.log('\n📊 Summary:');
-  console.log(`- Organizations: 1`);
-  console.log(`- Departments: ${departments.length}`);
-  console.log(`- Roles: ${roles.length}`);
-  console.log(`- Users: ${users.length}`);
-  console.log(`- Meeting Rooms: ${meetingRooms.length}`);
-  console.log(`- Meetings: ${meetings.length}`);
-  console.log(`- Meeting Participants: ${meetingParticipants.length}`);
-  console.log(`- Cost Templates: 1`);
-  console.log(`- Cost Rates: ${costRates.length}`);
-  
-  console.log('\n🔑 Test Accounts:');
-  console.log('CEO: ceo@sample-corp.com / Password123!');
-  console.log('CTO: cto@sample-corp.com / Password123!');
-  console.log('Dev Manager: dev-manager@sample-corp.com / Password123!');
-  console.log('Sales Manager: sales-manager@sample-corp.com / Password123!');
+  console.log('✅ Database seed completed successfully!');
+  console.log(`📊 Created:`);
+  console.log(`   - 1 organization: ${organization.name}`);
+  console.log(`   - ${departments.length} departments`);
+  console.log(`   - ${roles.length} roles`);
+  console.log(`   - ${users.length} users`);
+  console.log(`   - ${meetingRooms.length} meeting rooms`);
+  console.log(`   - ${meetings.length} meetings`);
+  console.log(`   - ${participants.length} meeting participants`);
+  console.log(`   - 1 cost template with ${costRates.length} cost rates`);
+  console.log(`   - 1 meeting cost calculation`);
+  console.log(`   - 1 meeting analytics record`);
+  console.log('');
+  console.log('🔑 Demo login credentials:');
+  console.log('   CEO: ceo@demo.com / password123');
+  console.log('   Tech Manager: tech-manager@demo.com / password123');
+  console.log('   Senior Dev: senior-dev@demo.com / password123');
+  console.log('   Sales Manager: sales-manager@demo.com / password123');
+  console.log('   HR Manager: hr-manager@demo.com / password123');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error during seeding:', e);
+    console.error('❌ Error during database seed:', e);
     process.exit(1);
   })
   .finally(async () => {

@@ -1,6 +1,6 @@
-# 🏢 Meeting Time Cost Manager
+# ⏰ Meeting TimeValue Pro
 
-**企業の会議時間コストを可視化・最適化するエンタープライズアプリケーション**
+**Meeting TimeValue Pro - 企業の会議時間価値を可視化・最適化するエンタープライズアプリケーション**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.8+-blue.svg)](https://www.typescriptlang.org/)

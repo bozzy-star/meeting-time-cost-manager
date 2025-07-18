@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting TimeValue Pro - Pricing Plans</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .language-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .language-selector select {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        
+        .pricing-card.popular {
+            border: 2px solid #ffeb3b;
+            transform: scale(1.05);
+        }
+        
+        .popular-badge {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #ffeb3b, #ff9800);
+            color: #333;
+            padding: 8px 20px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .plan-name {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .plan-price {
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #ffeb3b;
+        }
+        
+        .plan-price .currency {
+            font-size: 1.5rem;
+            vertical-align: top;
+        }
+        
+        .plan-period {
+            text-align: center;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+        
+        .plan-description {
+            text-align: center;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .features-list {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+        
+        .features-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+        }
+        
+        .features-list li::before {
+            content: "✓";
+            color: #4caf50;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+        
+        .features-list li.unavailable {
+            opacity: 0.5;
+        }
+        
+        .features-list li.unavailable::before {
+            content: "✗";
+            color: #f44336;
+        }
+        
+        .cta-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #4caf50, #8bc34a);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .cta-button.secondary {
+            background: linear-gradient(45deg, #2196f3, #21cbf3);
+        }
+        
+        .cta-button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+        
+        .comparison-table {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 50px;
+        }
+        
+        .comparison-table h3 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .comparison-header {
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .comparison-row {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .comparison-cell {
+            text-align: center;
+            padding: 15px;
+        }
+        
+        .check-mark {
+            color: #4caf50;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .x-mark {
+            color: #f44336;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .ad-preview {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            opacity: 0.7;
+        }
+        
+        .ad-preview.hidden {
+            display: none;
+        }
+        
+        .testimonials {
+            margin-top: 50px;
+            text-align: center;
+        }
+        
+        .testimonial {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        
+        .testimonial-author {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .logo {
+                font-size: 2rem;
+            }
+            
+            .plan-price {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="language-selector">
+        <select id="languageSelect" onchange="changeLanguage()">
+            <option value="en">🇺🇸 English</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="zh">🇨🇳 中文</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">⏰ Meeting TimeValue Pro</div>
+            <div class="subtitle" data-translate="pricing-subtitle">Choose the perfect plan for your team</div>
+        </div>
+
+        <div class="pricing-grid">
+            <!-- Free Plan -->
+            <div class="pricing-card" id="free-plan">
+                <div class="plan-name" data-translate="free-plan-name">Free</div>
+                <div class="plan-price">
+                    <span class="currency">$</span>0
+                </div>
+                <div class="plan-period" data-translate="free-plan-period">Forever</div>
+                <div class="plan-description" data-translate="free-plan-description">
+                    Perfect for individuals and small teams
+                </div>
+                
+                <div class="ad-preview">
+                    <div data-translate="ad-placeholder">📢 Advertisement Space</div>
+                    <small data-translate="ad-note">Ads help keep this plan free</small>
+                </div>
+                
+                <ul class="features-list">
+                    <li data-translate="feature-participants-5">Up to 5 meeting participants</li>
+                    <li data-translate="feature-meetings-20">20 meetings per month</li>
+                    <li data-translate="feature-storage-30">30-day data storage</li>
+                    <li data-translate="feature-basic-reports">Basic reports</li>
+                    <li data-translate="feature-multilingual">Multi-language support</li>
+                    <li class="unavailable" data-translate="feature-no-ads">Ad-free experience</li>
+                    <li class="unavailable" data-translate="feature-advanced-reports">Advanced analytics</li>
+                </ul>
+                
+                <button class="cta-button secondary" onclick="selectPlan('free')">
+                    <span data-translate="btn-get-started">Get Started</span>
+                </button>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="pricing-card popular" id="pro-plan">
+                <div class="popular-badge" data-translate="popular-badge">Most Popular</div>
+                <div class="plan-name" data-translate="pro-plan-name">Pro</div>
+                <div class="plan-price">
+                    <span class="currency">$</span>9<span style="font-size: 1.5rem;">.99</span>
+                </div>
+                <div class="plan-period" data-translate="pro-plan-period">per month</div>
+                <div class="plan-description" data-translate="pro-plan-description">
+                    Best for growing teams and businesses
+                </div>
+                
+                <ul class="features-list">
+                    <li data-translate="feature-participants-unlimited">Unlimited participants</li>
+                    <li data-translate="feature-meetings-unlimited">Unlimited meetings</li>
+                    <li data-translate="feature-storage-unlimited">Unlimited data storage</li>
+                    <li data-translate="feature-no-ads">Ad-free experience</li>
+                    <li data-translate="feature-advanced-reports">Advanced analytics</li>
+                    <li data-translate="feature-export">CSV/PDF export</li>
+                    <li data-translate="feature-custom-rates">Custom hourly rates</li>
+                    <li data-translate="feature-department-analysis">Department analysis</li>
+                </ul>
+                
+                <button class="cta-button" onclick="selectPlan('pro')">
+                    <span data-translate="btn-start-free-trial">Start Free Trial</span>
+                </button>
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div class="pricing-card" id="enterprise-plan">
+                <div class="plan-name" data-translate="enterprise-plan-name">Enterprise</div>
+                <div class="plan-price">
+                    <span class="currency">$</span>49<span style="font-size: 1.5rem;">.99</span>
+                </div>
+                <div class="plan-period" data-translate="enterprise-plan-period">per month / 10 users</div>
+                <div class="plan-description" data-translate="enterprise-plan-description">
+                    For large organizations and enterprises
+                </div>
+                
+                <ul class="features-list">
+                    <li data-translate="feature-all-pro">All Pro features</li>
+                    <li data-translate="feature-sso">Single Sign-On (SSO)</li>
+                    <li data-translate="feature-api">API access</li>
+                    <li data-translate="feature-dedicated-support">Dedicated support</li>
+                    <li data-translate="feature-on-premise">On-premise deployment</li>
+                    <li data-translate="feature-custom-integration">Custom integrations</li>
+                    <li data-translate="feature-admin-dashboard">Admin dashboard</li>
+                    <li data-translate="feature-compliance">SOC2 & GDPR compliance</li>
+                </ul>
+                
+                <button class="cta-button" onclick="selectPlan('enterprise')">
+                    <span data-translate="btn-contact-sales">Contact Sales</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="comparison-table">
+            <h3 data-translate="comparison-title">Feature Comparison</h3>
+            <div class="comparison-grid">
+                <div class="comparison-header" data-translate="features">Features</div>
+                <div class="comparison-header" data-translate="free">Free</div>
+                <div class="comparison-header" data-translate="pro">Pro</div>
+                <div class="comparison-header" data-translate="enterprise">Enterprise</div>
+                
+                <div class="comparison-row" data-translate="participants">Meeting Participants</div>
+                <div class="comparison-cell">5</div>
+                <div class="comparison-cell">∞</div>
+                <div class="comparison-cell">∞</div>
+                
+                <div class="comparison-row" data-translate="monthly-meetings">Monthly Meetings</div>
+                <div class="comparison-cell">20</div>
+                <div class="comparison-cell">∞</div>
+                <div class="comparison-cell">∞</div>
+                
+                <div class="comparison-row" data-translate="data-storage">Data Storage</div>
+                <div class="comparison-cell">30 days</div>
+                <div class="comparison-cell">∞</div>
+                <div class="comparison-cell">∞</div>
+                
+                <div class="comparison-row" data-translate="advertisements">Advertisements</div>
+                <div class="comparison-cell">✓</div>
+                <div class="comparison-cell">✗</div>
+                <div class="comparison-cell">✗</div>
+                
+                <div class="comparison-row" data-translate="advanced-analytics">Advanced Analytics</div>
+                <div class="comparison-cell">✗</div>
+                <div class="comparison-cell">✓</div>
+                <div class="comparison-cell">✓</div>
+                
+                <div class="comparison-row" data-translate="api-access">API Access</div>
+                <div class="comparison-cell">✗</div>
+                <div class="comparison-cell">✗</div>
+                <div class="comparison-cell">✓</div>
+                
+                <div class="comparison-row" data-translate="sso-support">SSO Support</div>
+                <div class="comparison-cell">✗</div>
+                <div class="comparison-cell">✗</div>
+                <div class="comparison-cell">✓</div>
+            </div>
+        </div>
+
+        <div class="testimonials">
+            <h3 data-translate="testimonials-title">What Our Users Say</h3>
+            <div class="testimonial">
+                <div data-translate="testimonial-1">"Meeting TimeValue Pro helped us reduce meeting costs by 40% in just 3 months!"</div>
+                <div class="testimonial-author">- Sarah Johnson, CEO at TechCorp</div>
+            </div>
+            <div class="testimonial">
+                <div data-translate="testimonial-2">"The real-time cost tracking is a game-changer for our team efficiency."</div>
+                <div class="testimonial-author">- 田中太郎, 株式会社ABC</div>
+            </div>
+            <div class="testimonial">
+                <div data-translate="testimonial-3">"Excellent tool for optimizing meeting productivity across our global teams."</div>
+                <div class="testimonial-author">- 李明, 北京科技有限公司</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                'pricing-subtitle': 'Choose the perfect plan for your team',
+                'free-plan-name': 'Free',
+                'free-plan-period': 'Forever',
+                'free-plan-description': 'Perfect for individuals and small teams',
+                'pro-plan-name': 'Pro',
+                'pro-plan-period': 'per month',
+                'pro-plan-description': 'Best for growing teams and businesses',
+                'enterprise-plan-name': 'Enterprise',
+                'enterprise-plan-period': 'per month / 10 users',
+                'enterprise-plan-description': 'For large organizations and enterprises',
+                'popular-badge': 'Most Popular',
+                'ad-placeholder': '📢 Advertisement Space',
+                'ad-note': 'Ads help keep this plan free',
+                'feature-participants-5': 'Up to 5 meeting participants',
+                'feature-meetings-20': '20 meetings per month',
+                'feature-storage-30': '30-day data storage',
+                'feature-basic-reports': 'Basic reports',
+                'feature-multilingual': 'Multi-language support',
+                'feature-no-ads': 'Ad-free experience',
+                'feature-advanced-reports': 'Advanced analytics',
+                'feature-participants-unlimited': 'Unlimited participants',
+                'feature-meetings-unlimited': 'Unlimited meetings',
+                'feature-storage-unlimited': 'Unlimited data storage',
+                'feature-export': 'CSV/PDF export',
+                'feature-custom-rates': 'Custom hourly rates',
+                'feature-department-analysis': 'Department analysis',
+                'feature-all-pro': 'All Pro features',
+                'feature-sso': 'Single Sign-On (SSO)',
+                'feature-api': 'API access',
+                'feature-dedicated-support': 'Dedicated support',
+                'feature-on-premise': 'On-premise deployment',
+                'feature-custom-integration': 'Custom integrations',
+                'feature-admin-dashboard': 'Admin dashboard',
+                'feature-compliance': 'SOC2 & GDPR compliance',
+                'btn-get-started': 'Get Started',
+                'btn-start-free-trial': 'Start Free Trial',
+                'btn-contact-sales': 'Contact Sales',
+                'comparison-title': 'Feature Comparison',
+                'features': 'Features',
+                'free': 'Free',
+                'pro': 'Pro',
+                'enterprise': 'Enterprise',
+                'participants': 'Meeting Participants',
+                'monthly-meetings': 'Monthly Meetings',
+                'data-storage': 'Data Storage',
+                'advertisements': 'Advertisements',
+                'advanced-analytics': 'Advanced Analytics',
+                'api-access': 'API Access',
+                'sso-support': 'SSO Support',
+                'testimonials-title': 'What Our Users Say',
+                'testimonial-1': '"Meeting TimeValue Pro helped us reduce meeting costs by 40% in just 3 months!"',
+                'testimonial-2': '"The real-time cost tracking is a game-changer for our team efficiency."',
+                'testimonial-3': '"Excellent tool for optimizing meeting productivity across our global teams."'
+            },
+            ja: {
+                'pricing-subtitle': 'チームに最適なプランを選択してください',
+                'free-plan-name': '無料',
+                'free-plan-period': '永久無料',
+                'free-plan-description': '個人や小規模チームに最適',
+                'pro-plan-name': 'プロ',
+                'pro-plan-period': '月額',
+                'pro-plan-description': '成長するチームやビジネスに最適',
+                'enterprise-plan-name': 'エンタープライズ',
+                'enterprise-plan-period': '月額 / 10ユーザー',
+                'enterprise-plan-description': '大規模組織や企業向け',
+                'popular-badge': '最も人気',
+                'ad-placeholder': '📢 広告スペース',
+                'ad-note': '広告により無料でご利用いただけます',
+                'feature-participants-5': '会議参加者5名まで',
+                'feature-meetings-20': '月20回まで会議',
+                'feature-storage-30': '30日間データ保存',
+                'feature-basic-reports': '基本レポート',
+                'feature-multilingual': '多言語サポート',
+                'feature-no-ads': '広告なし',
+                'feature-advanced-reports': '高度な分析',
+                'feature-participants-unlimited': '参加者無制限',
+                'feature-meetings-unlimited': '会議回数無制限',
+                'feature-storage-unlimited': 'データ保存無制限',
+                'feature-export': 'CSV/PDFエクスポート',
+                'feature-custom-rates': 'カスタム時給設定',
+                'feature-department-analysis': '部署別分析',
+                'feature-all-pro': '全プロ機能',
+                'feature-sso': 'シングルサインオン (SSO)',
+                'feature-api': 'API アクセス',
+                'feature-dedicated-support': '専用サポート',
+                'feature-on-premise': 'オンプレミス展開',
+                'feature-custom-integration': 'カスタム統合',
+                'feature-admin-dashboard': '管理者ダッシュボード',
+                'feature-compliance': 'SOC2 & GDPR準拠',
+                'btn-get-started': '開始する',
+                'btn-start-free-trial': '無料トライアル開始',
+                'btn-contact-sales': '営業に問い合わせ',
+                'comparison-title': '機能比較',
+                'features': '機能',
+                'free': '無料',
+                'pro': 'プロ',
+                'enterprise': 'エンタープライズ',
+                'participants': '会議参加者',
+                'monthly-meetings': '月間会議数',
+                'data-storage': 'データ保存',
+                'advertisements': '広告',
+                'advanced-analytics': '高度な分析',
+                'api-access': 'API アクセス',
+                'sso-support': 'SSO サポート',
+                'testimonials-title': 'ユーザーの声',
+                'testimonial-1': '"Meeting TimeValue Proのおかげで、わずか3ヶ月で会議コストを40%削減できました！"',
+                'testimonial-2': '"リアルタイムコスト追跡は、チーム効率性のゲームチェンジャーです。"',
+                'testimonial-3': '"グローバルチーム全体で会議の生産性を最適化するための優れたツールです。"'
+            },
+            zh: {
+                'pricing-subtitle': '为您的团队选择完美的计划',
+                'free-plan-name': '免费',
+                'free-plan-period': '永久免费',
+                'free-plan-description': '适合个人和小型团队',
+                'pro-plan-name': '专业版',
+                'pro-plan-period': '每月',
+                'pro-plan-description': '适合成长中的团队和企业',
+                'enterprise-plan-name': '企业版',
+                'enterprise-plan-period': '每月 / 10用户',
+                'enterprise-plan-description': '适合大型组织和企业',
+                'popular-badge': '最受欢迎',
+                'ad-placeholder': '📢 广告位',
+                'ad-note': '广告帮助保持此计划免费',
+                'feature-participants-5': '最多5名会议参与者',
+                'feature-meetings-20': '每月20次会议',
+                'feature-storage-30': '30天数据存储',
+                'feature-basic-reports': '基础报告',
+                'feature-multilingual': '多语言支持',
+                'feature-no-ads': '无广告体验',
+                'feature-advanced-reports': '高级分析',
+                'feature-participants-unlimited': '无限参与者',
+                'feature-meetings-unlimited': '无限会议',
+                'feature-storage-unlimited': '无限数据存储',
+                'feature-export': 'CSV/PDF导出',
+                'feature-custom-rates': '自定义时薪',
+                'feature-department-analysis': '部门分析',
+                'feature-all-pro': '所有专业版功能',
+                'feature-sso': '单点登录 (SSO)',
+                'feature-api': 'API 访问',
+                'feature-dedicated-support': '专属支持',
+                'feature-on-premise': '本地部署',
+                'feature-custom-integration': '自定义集成',
+                'feature-admin-dashboard': '管理员仪表板',
+                'feature-compliance': 'SOC2 & GDPR合规',
+                'btn-get-started': '开始使用',
+                'btn-start-free-trial': '开始免费试用',
+                'btn-contact-sales': '联系销售',
+                'comparison-title': '功能对比',
+                'features': '功能',
+                'free': '免费',
+                'pro': '专业版',
+                'enterprise': '企业版',
+                'participants': '会议参与者',
+                'monthly-meetings': '月度会议',
+                'data-storage': '数据存储',
+                'advertisements': '广告',
+                'advanced-analytics': '高级分析',
+                'api-access': 'API 访问',
+                'sso-support': 'SSO 支持',
+                'testimonials-title': '用户评价',
+                'testimonial-1': '"Meeting TimeValue Pro帮助我们在短短3个月内减少了40%的会议成本！"',
+                'testimonial-2': '"实时成本跟踪是我们团队效率的游戏规则改变者。"',
+                'testimonial-3': '"在全球团队中优化会议生产力的绝佳工具。"'
+            }
+        };
+
+        let currentLanguage = 'en';
+
+        function changeLanguage() {
+            currentLanguage = document.getElementById('languageSelect').value;
+            
+            // Update translations
+            const elements = document.querySelectorAll('[data-translate]');
+            elements.forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[currentLanguage][key]) {
+                    element.textContent = translations[currentLanguage][key];
+                }
+            });
+            
+            // Update currency and prices
+            updatePricing();
+        }
+
+        function updatePricing() {
+            const priceElements = document.querySelectorAll('.plan-price .currency');
+            const prices = {
+                en: { currency: '$', pro: 9.99, enterprise: 49.99 },
+                ja: { currency: '¥', pro: 1200, enterprise: 6000 },
+                zh: { currency: '¥', pro: 60, enterprise: 300 }
+            };
+            
+            priceElements.forEach((element, index) => {
+                element.textContent = prices[currentLanguage].currency;
+                if (index === 1) { // Pro plan
+                    element.nextSibling.textContent = Math.floor(prices[currentLanguage].pro);
+                } else if (index === 2) { // Enterprise plan
+                    element.nextSibling.textContent = Math.floor(prices[currentLanguage].enterprise);
+                }
+            });
+        }
+
+        function selectPlan(planType) {
+            const messages = {
+                en: {
+                    free: 'Welcome to Meeting TimeValue Pro Free! You can start using the app immediately.',
+                    pro: 'Starting your 14-day free trial for Meeting TimeValue Pro!',
+                    enterprise: 'Thank you for your interest in Enterprise plan. Our sales team will contact you within 24 hours.'
+                },
+                ja: {
+                    free: 'Meeting TimeValue Pro無料版へようこそ！すぐにアプリの使用を開始できます。',
+                    pro: 'Meeting TimeValue Proの14日間無料トライアルを開始します！',
+                    enterprise: 'エンタープライズプランにご興味をお持ちいただき、ありがとうございます。営業チームが24時間以内にご連絡いたします。'
+                },
+                zh: {
+                    free: '欢迎使用Meeting TimeValue Pro免费版！您可以立即开始使用应用程序。',
+                    pro: '开始您的Meeting TimeValue Pro 14天免费试用！',
+                    enterprise: '感谢您对企业版计划的兴趣。我们的销售团队将在24小时内与您联系。'
+                }
+            };
+            
+            alert(messages[currentLanguage][planType]);
+        }
+
+        // Initialize
+        updatePricing();
+    </script>
+</body>
+</html>

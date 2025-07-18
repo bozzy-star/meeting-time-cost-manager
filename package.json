@@ -1,7 +1,7 @@
 {
-  "name": "meeting-time-cost-manager",
+  "name": "meeting-timevalue-pro",
   "version": "1.0.0",
-  "description": "Enterprise meeting time cost management system",
+  "description": "Meeting TimeValue Pro - Enterprise meeting time value optimization system",
   "private": true,
   "workspaces": [
     "frontend",

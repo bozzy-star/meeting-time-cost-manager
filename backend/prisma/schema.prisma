@@ -1,61 +1,62 @@
-// Meeting Time Cost Manager - Prisma Schema
+// Meeting TimeValue Pro - Prisma Schema
 // エンタープライズグレード会議コスト管理システム
+// Development: SQLite / Production: PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 // 組織・企業
 model Organization {
-  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                  String    @db.VarChar(255)
-  slug                  String    @unique @db.VarChar(100)
-  domain                String?   @db.VarChar(255)
-  industry              String?   @db.VarChar(100)
+  id                    String    @id @default(cuid())
+  name                  String
+  slug                  String    @unique
+  domain                String?
+  industry              String?
   employeeCount         Int?      @map("employee_count")
-  timezone              String    @default("Asia/Tokyo") @db.VarChar(50)
-  currency              String    @default("JPY") @db.VarChar(3)
-  fiscalYearStart       DateTime? @map("fiscal_year_start") @db.Date
-  settings              Json      @default("{}")
-  subscriptionPlan      String    @default("basic") @map("subscription_plan") @db.VarChar(50)
-  subscriptionExpiresAt DateTime? @map("subscription_expires_at") @db.Timestamptz(6)
-  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(6)
+  timezone              String    @default("Asia/Tokyo")
+  currency              String    @default("JPY")
+  fiscalYearStart       DateTime? @map("fiscal_year_start")
+  settings              String    @default("{}")
+  subscriptionPlan      String    @default("basic") @map("subscription_plan")
+  subscriptionExpiresAt DateTime? @map("subscription_expires_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
 
   // Relations
   users            User[]
   departments      Department[]
   roles            Role[]
-  costTemplates    CostTemplate[]  @map("cost_templates")
+  costTemplates    CostTemplate[]
   meetings         Meeting[]
-  meetingRooms     MeetingRoom[]   @map("meeting_rooms")
+  meetingRooms     MeetingRoom[]
   meetingAnalytics MeetingAnalytics[]
   organizationMetrics OrganizationMetrics[]
-  auditLogs        AuditLog[]      @map("audit_logs")
+  auditLogs        AuditLog[]
 
   @@map("organizations")
 }
 
 // 部署
 model Department {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId String    @map("organization_id") @db.Uuid
-  parentId       String?   @map("parent_id") @db.Uuid
-  name           String    @db.VarChar(255)
-  code           String?   @db.VarChar(50)
+  id             String    @id @default(cuid())
+  organizationId String    @map("organization_id")
+  parentId       String?   @map("parent_id")
+  name           String
+  code           String?
   description    String?
-  costCenter     String?   @map("cost_center") @db.VarChar(100)
-  budgetAnnual   Decimal?  @map("budget_annual") @db.Decimal(15, 2)
-  managerId      String?   @map("manager_id") @db.Uuid
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+  costCenter     String?   @map("cost_center")
+  budgetAnnual   Float?    @map("budget_annual")
+  managerId      String?   @map("manager_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
 
   // Relations
   organization     Organization      @relation(fields: [organizationId], references: [id])
@@ -71,16 +72,16 @@ model Department {
 
 // 役職
 model Role {
-  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId     String    @map("organization_id") @db.Uuid
-  name               String    @db.VarChar(255)
+  id                 String    @id @default(cuid())
+  organizationId     String    @map("organization_id")
+  name               String
   level              Int // 1:CEO, 2:役員, 3:部長, 4:課長, 5:主任, 6:一般
-  grade              String?   @db.VarChar(10) // S1, M1, J1 etc.
+  grade              String?
   description        String?
-  permissions        Json      @default("{}")
-  defaultHourlyRate  Decimal?  @map("default_hourly_rate") @db.Decimal(10, 2)
-  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  permissions        String    @default("{}")
+  defaultHourlyRate  Float?    @map("default_hourly_rate")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -93,30 +94,30 @@ model Role {
 
 // ユーザー
 model User {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId   String    @map("organization_id") @db.Uuid
-  departmentId     String?   @map("department_id") @db.Uuid
-  roleId           String?   @map("role_id") @db.Uuid
-  employeeId       String?   @map("employee_id") @db.VarChar(50)
-  email            String    @unique @db.VarChar(255)
-  passwordHash     String?   @map("password_hash") @db.VarChar(255)
-  firstName        String    @map("first_name") @db.VarChar(100)
-  lastName         String    @map("last_name") @db.VarChar(100)
-  displayName      String?   @map("display_name") @db.VarChar(200)
+  id               String    @id @default(cuid())
+  organizationId   String    @map("organization_id")
+  departmentId     String?   @map("department_id")
+  roleId           String?   @map("role_id")
+  employeeId       String?   @map("employee_id")
+  email            String    @unique
+  passwordHash     String?   @map("password_hash")
+  firstName        String    @map("first_name")
+  lastName         String    @map("last_name")
+  displayName      String?   @map("display_name")
   avatarUrl        String?   @map("avatar_url")
-  phone            String?   @db.VarChar(20)
-  timezone         String    @default("Asia/Tokyo") @db.VarChar(50)
-  locale           String    @default("ja") @db.VarChar(10)
-  hourlyRate       Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
-  monthlySalary    Decimal?  @map("monthly_salary") @db.Decimal(12, 2)
-  employmentType   String    @default("full_time") @map("employment_type") @db.VarChar(50)
-  hiredAt          DateTime? @map("hired_at") @db.Date
-  status           String    @default("active") @db.VarChar(20)
-  lastLoginAt      DateTime? @map("last_login_at") @db.Timestamptz(6)
-  emailVerifiedAt  DateTime? @map("email_verified_at") @db.Timestamptz(6)
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  phone            String?
+  timezone         String    @default("Asia/Tokyo")
+  locale           String    @default("ja")
+  hourlyRate       Float?    @map("hourly_rate")
+  monthlySalary    Float?    @map("monthly_salary")
+  employmentType   String    @default("full_time") @map("employment_type")
+  hiredAt          DateTime? @map("hired_at")
+  status           String    @default("active")
+  lastLoginAt      DateTime? @map("last_login_at")
+  emailVerifiedAt  DateTime? @map("email_verified_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
 
   // Relations
   organization           Organization           @relation(fields: [organizationId], references: [id])
@@ -137,17 +138,17 @@ model User {
 
 // コストテンプレート
 model CostTemplate {
-  id                   String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId       String     @map("organization_id") @db.Uuid
-  name                 String     @db.VarChar(255)
+  id                   String     @id @default(cuid())
+  organizationId       String     @map("organization_id")
+  name                 String
   description          String?
-  currency             String     @default("JPY") @db.VarChar(3)
-  overtimeMultiplier   Decimal    @default(1.25) @map("overtime_multiplier") @db.Decimal(3, 2)
-  holidayMultiplier    Decimal    @default(1.5) @map("holiday_multiplier") @db.Decimal(3, 2)
-  nightShiftMultiplier Decimal    @default(1.2) @map("night_shift_multiplier") @db.Decimal(3, 2)
+  currency             String     @default("JPY")
+  overtimeMultiplier   Float      @default(1.25) @map("overtime_multiplier")
+  holidayMultiplier    Float      @default(1.5) @map("holiday_multiplier")
+  nightShiftMultiplier Float      @default(1.2) @map("night_shift_multiplier")
   isDefault            Boolean    @default(false) @map("is_default")
-  createdAt            DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
 
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -158,15 +159,15 @@ model CostTemplate {
 
 // 時給レート
 model CostRate {
-  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  costTemplateId   String       @map("cost_template_id") @db.Uuid
-  roleId           String?      @map("role_id") @db.Uuid
-  userId           String?      @map("user_id") @db.Uuid
-  baseHourlyRate   Decimal      @map("base_hourly_rate") @db.Decimal(10, 2)
-  effectiveFrom    DateTime     @map("effective_from") @db.Date
-  effectiveTo      DateTime?    @map("effective_to") @db.Date
-  rateType         String       @default("standard") @map("rate_type") @db.VarChar(20)
-  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  id               String       @id @default(cuid())
+  costTemplateId   String       @map("cost_template_id")
+  roleId           String?      @map("role_id")
+  userId           String?      @map("user_id")
+  baseHourlyRate   Float        @map("base_hourly_rate")
+  effectiveFrom    DateTime     @map("effective_from")
+  effectiveTo      DateTime?    @map("effective_to")
+  rateType         String       @default("standard") @map("rate_type")
+  createdAt        DateTime     @default(now()) @map("created_at")
 
   // Relations
   costTemplate CostTemplate @relation(fields: [costTemplateId], references: [id])
@@ -178,32 +179,32 @@ model CostRate {
 
 // 会議
 model Meeting {
-  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId      String    @map("organization_id") @db.Uuid
-  organizerId         String    @map("organizer_id") @db.Uuid
-  title               String    @db.VarChar(500)
+  id                  String    @id @default(cuid())
+  organizationId      String    @map("organization_id")
+  organizerId         String    @map("organizer_id")
+  title               String
   description         String?
-  meetingType         String    @default("regular") @map("meeting_type") @db.VarChar(50)
-  category            String?   @db.VarChar(100)
-  location            String?   @db.VarChar(255)
-  roomId              String?   @map("room_id") @db.Uuid
+  meetingType         String    @default("regular") @map("meeting_type")
+  category            String?
+  location            String?
+  roomId              String?   @map("room_id")
   isOnline            Boolean   @default(false) @map("is_online")
   meetingUrl          String?   @map("meeting_url")
-  scheduledStartAt    DateTime  @map("scheduled_start_at") @db.Timestamptz(6)
-  scheduledEndAt      DateTime  @map("scheduled_end_at") @db.Timestamptz(6)
-  actualStartAt       DateTime? @map("actual_start_at") @db.Timestamptz(6)
-  actualEndAt         DateTime? @map("actual_end_at") @db.Timestamptz(6)
-  status              String    @default("scheduled") @db.VarChar(20)
+  scheduledStartAt    DateTime  @map("scheduled_start_at")
+  scheduledEndAt      DateTime  @map("scheduled_end_at")
+  actualStartAt       DateTime? @map("actual_start_at")
+  actualEndAt         DateTime? @map("actual_end_at")
+  status              String    @default("scheduled")
   agenda              String?
-  objectives          Json?
+  objectives          String?   @default("{}")
   expectedOutcomes    String?   @map("expected_outcomes")
-  expectedRevenue     Decimal?  @map("expected_revenue") @db.Decimal(15, 2)
-  priority            String    @default("medium") @db.VarChar(20)
-  tags                String[]
-  settings            Json      @default("{}")
-  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt           DateTime? @map("deleted_at") @db.Timestamptz(6)
+  expectedRevenue     Float?    @map("expected_revenue")
+  priority            String    @default("medium")
+  tags                String    @default("")
+  settings            String    @default("{}")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
 
   // Relations
   organization    Organization         @relation(fields: [organizationId], references: [id])
@@ -219,19 +220,19 @@ model Meeting {
 
 // 会議参加者
 model MeetingParticipant {
-  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  meetingId            String    @map("meeting_id") @db.Uuid
-  userId               String    @map("user_id") @db.Uuid
-  role                 String    @default("participant") @db.VarChar(50)
-  invitationStatus     String    @default("pending") @map("invitation_status") @db.VarChar(20)
-  attendanceStatus     String    @default("unknown") @map("attendance_status") @db.VarChar(20)
-  joinedAt             DateTime? @map("joined_at") @db.Timestamptz(6)
-  leftAt               DateTime? @map("left_at") @db.Timestamptz(6)
-  hourlyRateOverride   Decimal?  @map("hourly_rate_override") @db.Decimal(10, 2)
+  id                   String    @id @default(cuid())
+  meetingId            String    @map("meeting_id")
+  userId               String    @map("user_id")
+  role                 String    @default("participant")
+  invitationStatus     String    @default("pending") @map("invitation_status")
+  attendanceStatus     String    @default("unknown") @map("attendance_status")
+  joinedAt             DateTime? @map("joined_at")
+  leftAt               DateTime? @map("left_at")
+  hourlyRateOverride   Float?    @map("hourly_rate_override")
   isRequired           Boolean   @default(true) @map("is_required")
   notes                String?
-  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
 
   // Relations
   meeting             Meeting               @relation(fields: [meetingId], references: [id])
@@ -244,22 +245,22 @@ model MeetingParticipant {
 
 // 会議コスト
 model MeetingCost {
-  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  meetingId                 String   @unique @map("meeting_id") @db.Uuid
-  totalCost                 Decimal  @default(0) @map("total_cost") @db.Decimal(15, 2)
-  directCost                Decimal  @default(0) @map("direct_cost") @db.Decimal(15, 2)
-  indirectCost              Decimal  @default(0) @map("indirect_cost") @db.Decimal(15, 2)
-  opportunityCost           Decimal  @default(0) @map("opportunity_cost") @db.Decimal(15, 2)
+  id                        String   @id @default(cuid())
+  meetingId                 String   @unique @map("meeting_id")
+  totalCost                 Float    @default(0) @map("total_cost")
+  directCost                Float    @default(0) @map("direct_cost")
+  indirectCost              Float    @default(0) @map("indirect_cost")
+  opportunityCost           Float    @default(0) @map("opportunity_cost")
   participantCount          Int      @default(0) @map("participant_count")
   actualDurationMinutes     Int?     @map("actual_duration_minutes")
   scheduledDurationMinutes  Int?     @map("scheduled_duration_minutes")
-  averageHourlyRate         Decimal? @map("average_hourly_rate") @db.Decimal(10, 2)
-  costPerMinute             Decimal? @map("cost_per_minute") @db.Decimal(10, 2)
-  efficiencyScore           Decimal? @map("efficiency_score") @db.Decimal(3, 2)
-  roiPercentage             Decimal? @map("roi_percentage") @db.Decimal(5, 2)
-  costBreakdown             Json?    @map("cost_breakdown")
-  calculatedAt              DateTime @default(now()) @map("calculated_at") @db.Timestamptz(6)
-  updatedAt                 DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  averageHourlyRate         Float?   @map("average_hourly_rate")
+  costPerMinute             Float?   @map("cost_per_minute")
+  efficiencyScore           Float?   @map("efficiency_score")
+  roiPercentage             Float?   @map("roi_percentage")
+  costBreakdown             String?  @map("cost_breakdown")
+  calculatedAt              DateTime @default(now()) @map("calculated_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
 
   // Relations
   meeting Meeting @relation(fields: [meetingId], references: [id])
@@ -269,18 +270,18 @@ model MeetingCost {
 
 // 会議トラッキング
 model MeetingTracker {
-  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  meetingId           String    @map("meeting_id") @db.Uuid
-  trackerSessionId    String    @unique @map("tracker_session_id") @db.Uuid
-  startedBy           String    @map("started_by") @db.Uuid
-  startedAt           DateTime  @map("started_at") @db.Timestamptz(6)
-  endedAt             DateTime? @map("ended_at") @db.Timestamptz(6)
-  currentCost         Decimal   @default(0) @map("current_cost") @db.Decimal(15, 2)
+  id                  String    @id @default(cuid())
+  meetingId           String    @unique @map("meeting_id")
+  trackerSessionId    String    @unique @map("tracker_session_id")
+  startedBy           String    @map("started_by")
+  startedAt           DateTime  @map("started_at")
+  endedAt             DateTime? @map("ended_at")
+  currentCost         Float     @default(0) @map("current_cost")
   currentParticipants Int       @default(0) @map("current_participants")
-  status              String    @default("active") @db.VarChar(20)
-  realTimeData        Json      @default("{}") @map("real_time_data")
-  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  status              String    @default("active")
+  realTimeData        String    @default("{}") @map("real_time_data")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
   // Relations
   meeting             Meeting              @relation(fields: [meetingId], references: [id])
@@ -292,16 +293,16 @@ model MeetingTracker {
 
 // 参加者トラッキング
 model ParticipantTracker {
-  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  meetingTrackerId     String    @map("meeting_tracker_id") @db.Uuid
-  participantId        String    @map("participant_id") @db.Uuid
-  joinedAt             DateTime  @map("joined_at") @db.Timestamptz(6)
-  leftAt               DateTime? @map("left_at") @db.Timestamptz(6)
+  id                   String    @id @default(cuid())
+  meetingTrackerId     String    @map("meeting_tracker_id")
+  participantId        String    @map("participant_id")
+  joinedAt             DateTime  @map("joined_at")
+  leftAt               DateTime? @map("left_at")
   totalDurationMinutes Int       @default(0) @map("total_duration_minutes")
   isActive             Boolean   @default(true) @map("is_active")
-  activityData         Json      @default("{}") @map("activity_data")
-  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  activityData         String    @default("{}") @map("activity_data")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
 
   // Relations
   meetingTracker MeetingTracker     @relation(fields: [meetingTrackerId], references: [id])
@@ -313,11 +314,11 @@ model ParticipantTracker {
 
 // 会議分析
 model MeetingAnalytics {
-  id                        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  meetingId                 String      @unique @map("meeting_id") @db.Uuid
-  organizationId            String      @map("organization_id") @db.Uuid
-  departmentId              String?     @map("department_id") @db.Uuid
-  meetingDate               DateTime    @map("meeting_date") @db.Date
+  id                        String      @id @default(cuid())
+  meetingId                 String      @unique @map("meeting_id")
+  organizationId            String      @map("organization_id")
+  departmentId              String?     @map("department_id")
+  meetingDate               DateTime    @map("meeting_date")
   meetingHour               Int         @map("meeting_hour")
   dayOfWeek                 Int         @map("day_of_week")
   month                     Int
@@ -325,9 +326,9 @@ model MeetingAnalytics {
   year                      Int
   
   // Cost Metrics
-  totalCost                 Decimal?    @map("total_cost") @db.Decimal(15, 2)
-  costPerParticipant        Decimal?    @map("cost_per_participant") @db.Decimal(10, 2)
-  costPerMinute             Decimal?    @map("cost_per_minute") @db.Decimal(8, 2)
+  totalCost                 Float?    @map("total_cost")
+  costPerParticipant        Float?    @map("cost_per_participant")
+  costPerMinute             Float?    @map("cost_per_minute")
   
   // Time Metrics
   scheduledDuration         Int?        @map("scheduled_duration")
@@ -337,28 +338,28 @@ model MeetingAnalytics {
   
   // Efficiency Metrics
   startDelayMinutes         Int         @default(0) @map("start_delay_minutes")
-  efficiencyScore           Decimal?    @map("efficiency_score") @db.Decimal(3, 2)
-  productivityScore         Decimal?    @map("productivity_score") @db.Decimal(3, 2)
+  efficiencyScore           Float?      @map("efficiency_score")
+  productivityScore         Float?      @map("productivity_score")
   decisionCount             Int         @default(0) @map("decision_count")
   
   // Participation Metrics
   invitedCount              Int?        @map("invited_count")
   attendedCount             Int?        @map("attended_count")
-  attendanceRate            Decimal?    @map("attendance_rate") @db.Decimal(3, 2)
+  attendanceRate            Float?      @map("attendance_rate")
   lateArrivals              Int         @default(0) @map("late_arrivals")
   earlyDepartures           Int         @default(0) @map("early_departures")
   
   // Financial Metrics
-  expectedRevenue           Decimal?    @map("expected_revenue") @db.Decimal(15, 2)
-  roiPercentage             Decimal?    @map("roi_percentage") @db.Decimal(5, 2)
-  costBenefitRatio          Decimal?    @map("cost_benefit_ratio") @db.Decimal(5, 2)
+  expectedRevenue           Float?      @map("expected_revenue")
+  roiPercentage             Float?      @map("roi_percentage")
+  costBenefitRatio          Float?      @map("cost_benefit_ratio")
   
   // Quality Metrics
-  satisfactionScore         Decimal?    @map("satisfaction_score") @db.Decimal(3, 2)
-  outcomeAchievementRate    Decimal?    @map("outcome_achievement_rate") @db.Decimal(3, 2)
+  satisfactionScore         Float?      @map("satisfaction_score")
+  outcomeAchievementRate    Float?      @map("outcome_achievement_rate")
   
-  processedAt               DateTime    @default(now()) @map("processed_at") @db.Timestamptz(6)
-  updatedAt                 DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  processedAt               DateTime    @default(now()) @map("processed_at")
+  updatedAt                 DateTime    @updatedAt @map("updated_at")
 
   // Relations
   meeting      Meeting      @relation(fields: [meetingId], references: [id])
@@ -370,37 +371,37 @@ model MeetingAnalytics {
 
 // 組織メトリクス
 model OrganizationMetrics {
-  id                            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId                String      @map("organization_id") @db.Uuid
-  metricDate                    DateTime    @map("metric_date") @db.Date
-  metricType                    String      @map("metric_type") @db.VarChar(50)
+  id                            String      @id @default(cuid())
+  organizationId                String      @map("organization_id")
+  metricDate                    DateTime    @map("metric_date")
+  metricType                    String      @map("metric_type")
   
   // Meeting Volume
   totalMeetings                 Int         @default(0) @map("total_meetings")
-  totalMeetingHours             Decimal     @default(0) @map("total_meeting_hours") @db.Decimal(8, 2)
-  averageMeetingDuration        Decimal?    @map("average_meeting_duration") @db.Decimal(5, 2)
+  totalMeetingHours             Float       @default(0) @map("total_meeting_hours")
+  averageMeetingDuration        Float?      @map("average_meeting_duration")
   
   // Cost Analysis
-  totalMeetingCost              Decimal     @default(0) @map("total_meeting_cost") @db.Decimal(15, 2)
-  averageMeetingCost            Decimal?    @map("average_meeting_cost") @db.Decimal(10, 2)
-  costPerEmployee               Decimal?    @map("cost_per_employee") @db.Decimal(10, 2)
-  costTrendPercentage           Decimal?    @map("cost_trend_percentage") @db.Decimal(5, 2)
+  totalMeetingCost              Float       @default(0) @map("total_meeting_cost")
+  averageMeetingCost            Float?      @map("average_meeting_cost")
+  costPerEmployee               Float?      @map("cost_per_employee")
+  costTrendPercentage           Float?      @map("cost_trend_percentage")
   
   // Efficiency Metrics
-  overallEfficiencyScore        Decimal?    @map("overall_efficiency_score") @db.Decimal(3, 2)
-  onTimeStartRate               Decimal?    @map("on_time_start_rate") @db.Decimal(3, 2)
-  meetingUtilizationRate        Decimal?    @map("meeting_utilization_rate") @db.Decimal(3, 2)
+  overallEfficiencyScore        Float?      @map("overall_efficiency_score")
+  onTimeStartRate               Float?      @map("on_time_start_rate")
+  meetingUtilizationRate        Float?      @map("meeting_utilization_rate")
   
   // ROI Analysis
-  totalExpectedRevenue          Decimal?    @map("total_expected_revenue") @db.Decimal(15, 2)
-  averageRoi                    Decimal?    @map("average_roi") @db.Decimal(5, 2)
-  profitableMeetingsPercentage  Decimal?    @map("profitable_meetings_percentage") @db.Decimal(3, 2)
+  totalExpectedRevenue          Float?      @map("total_expected_revenue")
+  averageRoi                    Float?      @map("average_roi")
+  profitableMeetingsPercentage  Float?      @map("profitable_meetings_percentage")
   
   // Benchmarks
-  industryComparison            Json?       @map("industry_comparison")
-  sizeComparison                Json?       @map("size_comparison")
+  industryComparison            String?     @map("industry_comparison")
+  sizeComparison                String?     @map("size_comparison")
   
-  calculatedAt                  DateTime    @default(now()) @map("calculated_at") @db.Timestamptz(6)
+  calculatedAt                  DateTime    @default(now()) @map("calculated_at")
 
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -411,16 +412,16 @@ model OrganizationMetrics {
 
 // 会議室
 model MeetingRoom {
-  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId String       @map("organization_id") @db.Uuid
-  name           String       @db.VarChar(255)
-  location       String?      @db.VarChar(255)
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  name           String
+  location       String?
   capacity       Int?
-  hourlyCost     Decimal?     @map("hourly_cost") @db.Decimal(8, 2)
-  equipment      Json?
+  hourlyCost     Float?       @map("hourly_cost")
+  equipment      String?
   isBookable     Boolean      @default(true) @map("is_bookable")
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -431,17 +432,17 @@ model MeetingRoom {
 
 // セッション管理
 model Session {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId          String    @map("user_id") @db.Uuid
-  sessionToken    String    @unique @map("session_token") @db.VarChar(255)
-  refreshToken    String?   @unique @map("refresh_token") @db.VarChar(255)
-  deviceInfo      Json?     @map("device_info")
-  ipAddress       String?   @map("ip_address") @db.Inet
+  id              String    @id @default(cuid())
+  userId          String    @map("user_id")
+  sessionToken    String    @unique @map("session_token")
+  refreshToken    String?   @unique @map("refresh_token")
+  deviceInfo      String?   @map("device_info")
+  ipAddress       String?   @map("ip_address")
   userAgent       String?   @map("user_agent")
-  expiresAt       DateTime  @map("expires_at") @db.Timestamptz(6)
-  lastAccessedAt  DateTime  @default(now()) @map("last_accessed_at") @db.Timestamptz(6)
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(6)
+  expiresAt       DateTime  @map("expires_at")
+  lastAccessedAt  DateTime  @default(now()) @map("last_accessed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  revokedAt       DateTime? @map("revoked_at")
 
   // Relations
   user User @relation(fields: [userId], references: [id])
@@ -451,18 +452,18 @@ model Session {
 
 // 監査ログ
 model AuditLog {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId String    @map("organization_id") @db.Uuid
-  userId         String?   @map("user_id") @db.Uuid
-  action         String    @db.VarChar(100)
-  resourceType   String    @map("resource_type") @db.VarChar(50)
-  resourceId     String?   @map("resource_id") @db.Uuid
-  oldValues      Json?     @map("old_values")
-  newValues      Json?     @map("new_values")
-  metadata       Json?
-  ipAddress      String?   @map("ip_address") @db.Inet
+  id             String    @id @default(cuid())
+  organizationId String    @map("organization_id")
+  userId         String?   @map("user_id")
+  action         String
+  resourceType   String    @map("resource_type")
+  resourceId     String?   @map("resource_id")
+  oldValues      String?   @map("old_values")
+  newValues      String?   @map("new_values")
+  metadata       String?
+  ipAddress      String?   @map("ip_address")
   userAgent      String?   @map("user_agent")
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at")
 
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -473,14 +474,14 @@ model AuditLog {
 
 // 通知
 model Notification {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId    String    @map("user_id") @db.Uuid
-  type      String    @db.VarChar(50)
-  title     String    @db.VarChar(255)
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  type      String
+  title     String
   message   String?
-  data      Json?
-  readAt    DateTime? @map("read_at") @db.Timestamptz(6)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  data      String?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   // Relations
   user User @relation(fields: [userId], references: [id])

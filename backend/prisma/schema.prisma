@@ -1,13 +1,13 @@
 // Meeting TimeValue Pro - Prisma Schema
 // エンタープライズグレード会議コスト管理システム
-// Development: SQLite / Production: PostgreSQL
+// Production: PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

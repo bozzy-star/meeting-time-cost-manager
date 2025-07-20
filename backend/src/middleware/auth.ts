@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { verifyToken, JWTPayload } from '../utils/auth';
 
 export interface AuthenticatedRequest extends Request {

@@ -1,9 +1,8 @@
-import express, { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { verifyToken, JWTPayload } from '../utils/auth';
 
-export interface AuthenticatedRequest extends Request {
-  user?: JWTPayload;
-}
+// Use global Express.Request instead of custom interface
+export type AuthenticatedRequest = Request;
 
 export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;

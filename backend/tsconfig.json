@@ -8,18 +8,16 @@
     "rootDir": "./src",
     "strict": false,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["node"],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "removeComments": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "removeComments": true
   },
   "include": [
     "src/**/*"

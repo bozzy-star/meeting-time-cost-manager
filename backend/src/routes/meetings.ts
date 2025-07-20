@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import { CreateMeetingRequest, UpdateMeetingRequest } from '../types/api';
+import * as process from 'process';
 
 const router = express.Router();
 const prisma = new PrismaClient();

@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+import * as process from 'process';
 import authRoutes from './routes/auth';
 import meetingRoutes from './routes/meetings';
 import participantRoutes from './routes/participants';

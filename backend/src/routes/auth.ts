@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { generateToken, hashPassword, comparePassword, generateSessionToken, generateRefreshToken } from '../utils/auth';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import * as process from 'process';
 
 const router = express.Router();
 const prisma = new PrismaClient();
